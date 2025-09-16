@@ -1,0 +1,9 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+<main class="max-w-7xl mx-auto">
+    <h1 class="text-center font-bold">A home page</h1>
+    <div class="prose mx-auto py-12 dark:prose-invert">
+        {{ page_content | safe }}
+    </div>
+</main>
+{% endblock body %}

@@ -1,0 +1,20 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+<main class="flex max-w-7xl mx-auto lg:py-12 py-8">
+    <aside class="flex-1 px-4">
+        <div class="flex flex-col space-y-4">
+            {% for l in collection_pages %}
+            <a href="{{l.link}}" class="block text-white">{{l.text}}</a>
+            {% endfor %}
+        </div>
+    </aside>
+    <div class="">
+        <div class="prose mx-auto prose-md dark:prose-invert">
+            {{ page_content | safe }}
+        </div>
+    </div>
+    <div class=" flex-1 px-4">
+        <p class="text-white">Eventual TOC</p>
+    </div>
+</main>
+{% endblock body %}
