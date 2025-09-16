@@ -1,14 +1,18 @@
 @import "tailwindcss" source(".");
 @plugin "@tailwindcss/typography";
-@import "./themes/default.css";
+/* @import "./themes/default.css"; */
+@import "./themes/yellow.css";
 
-/* Custom utility classes for elements not covered by BasecoatUI */
+/* Custom utility classes using BasecoatUI variables for seamless theming */
 .hero-gradient {
-    @apply bg-gradient-to-br from-blue-600 to-purple-600;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
 }
 
 .nav-backdrop {
-    @apply backdrop-blur-lg;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: hsl(var(--background) / 0.8);
+    border-bottom: 1px solid hsl(var(--border));
 }
 
 .container-narrow {
@@ -20,15 +24,21 @@
 }
 
 .hero-title {
-    @apply text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent;
+    @apply text-5xl md:text-7xl font-bold mb-6;
+    background: linear-gradient(to right, white 0%, rgba(255, 255, 255, 0.8) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .hero-subtitle {
-    @apply text-xl md:text-2xl text-blue-100 mb-8 font-light;
+    @apply text-xl md:text-2xl mb-8 font-light;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .hero-description {
-    @apply text-lg text-blue-200 mb-12;
+    @apply text-lg mb-12;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .sidebar-section {
@@ -37,8 +47,16 @@
 
 .sidebar-title {
     @apply font-semibold text-sm uppercase tracking-wide mb-4;
+    color: hsl(var(--sidebar-foreground));
 }
 
 .sidebar-link {
-    @apply block py-2 px-3 rounded-md text-sm transition-colors hover:bg-muted;
+    @apply block py-2 px-3 rounded-md text-sm transition-colors;
+    color: hsl(var(--muted-foreground));
+    border-radius: var(--radius);
+}
+
+.sidebar-link:hover {
+    background-color: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-accent-foreground));
 }
