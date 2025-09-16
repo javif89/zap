@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 use crate::markdown::get_page_title;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Page {
     pub title: String,
     pub path: PathBuf,
@@ -39,7 +39,7 @@ impl Page {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PageType {
     Home,
     Changelog,
@@ -48,6 +48,7 @@ pub enum PageType {
     Unknown,
 }
 
+#[derive(Clone)]
 pub struct Collection {
     pub name: String,
     pub pages: Vec<Page>,
