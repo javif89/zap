@@ -5,28 +5,7 @@ body {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom background utilities using BasecoatUI variables */
-.bg-sidebar {
-    background-color: var(--sidebar);
-}
-
-/* Custom text utilities using BasecoatUI variables */
-.text-foreground { 
-    color: var(--foreground); 
-}
-
-.text-muted-foreground { 
-    color: var(--muted-foreground); 
-}
-
-/* Border utilities */
-.border-border { 
-    border-color: var(--border); 
-}
-
-.border-sidebar { 
-    border-color: var(--sidebar-border); 
-}
+/* BasecoatUI already provides these utilities, but adding for compatibility */
 
 /* Enhanced Prose Styling using BasecoatUI variables */
 .prose {
