@@ -1,29 +1,22 @@
-use std::{error::Error, path::PathBuf};
+use std::path::PathBuf;
 
 use serde::Serialize;
-use tera::{Context, Tera};
-use zap_core::{PageType, config::Config};
+use zap_core::{TemplateRenderer, config::Config};
 
 #[derive(Serialize)]
 struct NavItem {
     text: String,
     link: String,
 }
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cfg = Config::read("./zap.toml").unwrap_or_default();
     println!("{cfg:#?}");
-    let tera = match Tera::new("theme/**/*.html") {
-        Ok(t) => t,
-        Err(e) => {
-            eprintln!("Parsing error(s): {}", e);
-            std::process::exit(1);
-        }
-    };
+    
+    let mut renderer = TemplateRenderer::new("theme/**/*.html")?;
 
     let mut zap = zap_core::Zap::new(PathBuf::from("./site"));
     zap.scan();
 
-    let mut context = Context::new();
     let mut navigation: Vec<NavItem> = Vec::new();
 
     for p in zap.pages() {
@@ -42,10 +35,11 @@ fn main() {
 
     // Build context
     let site_config = cfg.site.unwrap_or_default();
-    context.insert("site", &site_config);
     let home_config = cfg.home.unwrap_or_default();
-    context.insert("home", &home_config);
-    context.insert("secondary_nav", &navigation);
+    
+    renderer.add_to_context("site", &site_config);
+    renderer.add_to_context("home", &home_config);
+    renderer.add_to_context("secondary_nav", &navigation);
 
     let _ = std::fs::create_dir_all("out");
 
@@ -54,17 +48,11 @@ fn main() {
     for p in zap.pages() {
         println!("{}: {:?}", p.title, p.page_type);
         println!("{} -> {}", p.path.display(), p.out_path().display());
-        context.insert("page_content", &zap.render_page(p));
-        let template = get_page_template(p);
-        match tera.render(&template, &context) {
-            Ok(s) => {
-                let _ = std::fs::create_dir_all(out.join(p.out_path().with_file_name("")));
-                match std::fs::write(out.join(p.out_path()), s) {
-                    Ok(_) => println!("Rendered successfully"),
-                    Err(e) => eprintln!("Failed to render: {e:?}"),
-                }
-            }
-            Err(e) => eprintln!("Tera err: {:?}", e),
+        
+        renderer.add_to_context("page_content", &zap.render_page(p));
+        match renderer.render_to_file(p.template_name(), &out.join(p.out_path())) {
+            Ok(_) => println!("Rendered successfully"),
+            Err(e) => eprintln!("Failed to render: {e:?}"),
         }
     }
 
@@ -82,23 +70,15 @@ fn main() {
         for p in &c.pages {
             println!("{}: {:?}", p.title, p.page_type);
             println!("{} -> {}", p.path.display(), p.out_path().display());
-            context.insert("page_content", &zap.render_page(p));
-            context.insert("collection_pages", &page_links);
-            if let Ok(s) = tera.render("doc.html", &context) {
-                let _ = std::fs::create_dir_all(out.join(p.out_path().with_file_name("")));
-                match std::fs::write(out.join(p.out_path()), s) {
-                    Ok(_) => println!("Rendered successfully"),
-                    Err(e) => eprintln!("Render err: {}", e),
-                }
+            
+            renderer.add_to_context("page_content", &zap.render_page(p));
+            renderer.add_to_context("collection_pages", &page_links);
+            match renderer.render_to_file("doc.html", &out.join(p.out_path())) {
+                Ok(_) => println!("Rendered successfully"),
+                Err(e) => eprintln!("Render err: {}", e),
             }
         }
     }
-}
-
-fn get_page_template(page: &zap_core::Page) -> String {
-    match page.page_type {
-        PageType::Home => "home.html".into(),
-        PageType::Changelog => "changelog.html".into(),
-        _ => "page.html".into(),
-    }
+    
+    Ok(())
 }

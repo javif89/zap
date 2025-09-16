@@ -29,6 +29,14 @@ impl Page {
             _ => out.join(&self.path.with_extension("")).join("index.html"),
         }
     }
+
+    pub fn template_name(&self) -> &'static str {
+        match self.page_type {
+            PageType::Home => "home.html",
+            PageType::Changelog => "changelog.html",
+            _ => "page.html",
+        }
+    }
 }
 
 #[derive(Debug)]
