@@ -1,7 +1,7 @@
+use crate::markdown::get_page_title;
+use crate::site::{Collection, Page, PageType};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use crate::markdown::get_page_title;
-use crate::site::{Page, PageType, Collection};
 
 #[derive(Debug)]
 pub enum ScanError {
@@ -39,20 +39,21 @@ impl SiteScanner {
 
     pub fn scan(&self) -> Result<(Vec<Page>, Vec<Collection>), ScanError> {
         println!("Scanning: {}", self.source_dir.display());
-        
+
         let pages = self.scan_pages()?;
         let collections = self.scan_collections()?;
-        
+
         Ok((pages, collections))
     }
 
     pub fn scan_pages(&self) -> Result<Vec<Page>, ScanError> {
         let mut pages = Vec::new();
-        
+
         for entry in std::fs::read_dir(&self.source_dir)? {
             let entry = entry?;
             let path = entry.path();
-            
+            println!("Scan {path:?}");
+
             // Only process markdown files in the root directory
             if path.is_file() && get_extension(&path) == "md" {
                 if let Some(page) = self.scan_page(path)? {
@@ -60,24 +61,24 @@ impl SiteScanner {
                 }
             }
         }
-        
+
         Ok(pages)
     }
 
     pub fn scan_collections(&self) -> Result<Vec<Collection>, ScanError> {
         let mut collections = Vec::new();
-        
+
         for entry in std::fs::read_dir(&self.source_dir)? {
             let entry = entry?;
             let path = entry.path();
-            
+
             // Only process directories
             if path.is_dir() {
                 let collection = self.scan_collection(path)?;
                 collections.push(collection);
             }
         }
-        
+
         Ok(collections)
     }
 
@@ -94,7 +95,8 @@ impl SiteScanner {
         };
 
         let title = get_page_title(&path);
-        let relative_path = path.strip_prefix(&self.source_dir)
+        let relative_path = path
+            .strip_prefix(&self.source_dir)
             .map_err(|_| ScanError::InvalidPath(path.clone()))?;
 
         Ok(Some(Page {
@@ -105,7 +107,8 @@ impl SiteScanner {
     }
 
     fn scan_collection(&self, path: PathBuf) -> Result<Collection, ScanError> {
-        let collection_name = path.file_name()
+        let collection_name = path
+            .file_name()
             .ok_or_else(|| ScanError::InvalidPath(path.clone()))?
             .to_string_lossy()
             .to_string();
@@ -115,6 +118,8 @@ impl SiteScanner {
             pages: Vec::new(),
         };
 
+        // Recursively find ALL markdown files in this collection directory
+        // This includes files in subdirectories, which are part of this collection
         for markdown_file in get_all_markdown_files(&path) {
             if let Some(page) = self.scan_page(markdown_file)? {
                 collection.pages.push(page);

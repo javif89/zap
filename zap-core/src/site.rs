@@ -1,6 +1,6 @@
+use crate::markdown::{PageElement, get_page_structured, get_page_title};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use crate::markdown::get_page_title;
 
 #[derive(Debug, Clone)]
 pub struct Page {
@@ -15,6 +15,11 @@ impl Page {
             .with_file_name("")
             .to_string_lossy()
             .to_string()
+    }
+
+    pub fn elements(&self) -> Vec<PageElement> {
+        println!("My path is: {}", &self.path.display());
+        get_page_structured(&self.path)
     }
 
     pub fn out_path(&self) -> PathBuf {
@@ -36,6 +41,29 @@ impl Page {
             PageType::Changelog => "changelog.html",
             _ => "page.html",
         }
+    }
+
+    pub fn get_structured_elements(&self, source_dir: &Path) -> Vec<PageElement> {
+        let full_path = source_dir.join(&self.path);
+        get_page_structured(&full_path)
+    }
+
+    pub fn get_first_heading(&self, source_dir: &Path) -> Option<String> {
+        self.get_structured_elements(source_dir)
+            .into_iter()
+            .find_map(|element| match element {
+                PageElement::Heading { text, .. } => Some(text),
+                _ => None,
+            })
+    }
+
+    pub fn get_first_paragraph(&self, source_dir: &Path) -> Option<String> {
+        self.get_structured_elements(source_dir)
+            .into_iter()
+            .find_map(|element| match element {
+                PageElement::Paragraph { text } => Some(text),
+                _ => None,
+            })
     }
 }
 

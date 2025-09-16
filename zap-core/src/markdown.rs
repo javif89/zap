@@ -68,6 +68,15 @@ pub fn parse_page(path: &str) -> Result<String, std::io::Error> {
     Ok(out)
 }
 
+#[derive(Debug, Clone)]
+pub enum PageElement {
+    Heading { level: u32, text: String },
+    Paragraph { text: String },
+    CodeBlock { language: Option<String>, content: String },
+    List { items: Vec<String>, ordered: bool },
+    BlockQuote { text: String },
+}
+
 struct Heading {
     level: u32,
     text: String,
@@ -108,6 +117,107 @@ fn get_page_headings(path: &std::path::PathBuf) -> Vec<Heading> {
     }
 
     headings
+}
+
+pub fn get_page_structured(path: &std::path::PathBuf) -> Vec<PageElement> {
+    let content = std::fs::read_to_string(path).expect("Failed to read page");
+    let options = Options::all();
+    let parser = Parser::new_ext(&content, options);
+
+    let mut elements = Vec::new();
+    let mut current_element: Option<PageElement> = None;
+    let mut text_buf = String::new();
+    let mut list_items = Vec::new();
+    let mut current_level = 0;
+    let mut current_ordered = false;
+
+    for event in parser {
+        match event {
+            Event::Start(Tag::Heading { level, .. }) => {
+                current_level = level as u32;
+                text_buf.clear();
+            }
+            Event::End(TagEnd::Heading { .. }) => {
+                if !text_buf.is_empty() {
+                    elements.push(PageElement::Heading {
+                        level: current_level,
+                        text: text_buf.trim().to_string(),
+                    });
+                    text_buf.clear();
+                }
+            }
+            Event::Start(Tag::Paragraph) => {
+                text_buf.clear();
+            }
+            Event::End(TagEnd::Paragraph) => {
+                if !text_buf.is_empty() {
+                    elements.push(PageElement::Paragraph {
+                        text: text_buf.trim().to_string(),
+                    });
+                    text_buf.clear();
+                }
+            }
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) => {
+                text_buf.clear();
+                current_element = Some(PageElement::CodeBlock {
+                    language: if lang.is_empty() { None } else { Some(lang.to_string()) },
+                    content: String::new(),
+                });
+            }
+            Event::End(TagEnd::CodeBlock) => {
+                if let Some(PageElement::CodeBlock { language, .. }) = current_element.take() {
+                    elements.push(PageElement::CodeBlock {
+                        language,
+                        content: text_buf.trim().to_string(),
+                    });
+                    text_buf.clear();
+                }
+            }
+            Event::Start(Tag::List(start_num)) => {
+                current_ordered = start_num.is_some();
+                list_items.clear();
+                text_buf.clear();
+            }
+            Event::End(TagEnd::List(_)) => {
+                if !list_items.is_empty() {
+                    elements.push(PageElement::List {
+                        items: list_items.clone(),
+                        ordered: current_ordered,
+                    });
+                    list_items.clear();
+                }
+            }
+            Event::Start(Tag::Item) => {
+                text_buf.clear();
+            }
+            Event::End(TagEnd::Item) => {
+                if !text_buf.is_empty() {
+                    list_items.push(text_buf.trim().to_string());
+                    text_buf.clear();
+                }
+            }
+            Event::Start(Tag::BlockQuote(_)) => {
+                text_buf.clear();
+            }
+            Event::End(TagEnd::BlockQuote(_)) => {
+                if !text_buf.is_empty() {
+                    elements.push(PageElement::BlockQuote {
+                        text: text_buf.trim().to_string(),
+                    });
+                    text_buf.clear();
+                }
+            }
+            Event::Text(text) => {
+                text_buf.push_str(&text);
+            }
+            Event::SoftBreak | Event::HardBreak => {
+                text_buf.push(' ');
+            }
+            _ => {}
+        }
+    }
+
+    elements
 }
 
 pub fn get_page_title(path: &std::path::PathBuf) -> String {

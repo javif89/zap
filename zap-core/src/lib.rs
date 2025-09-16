@@ -7,7 +7,7 @@ pub mod builder;
 pub mod scanner;
 
 // Re-export main types
-pub use markdown::parse_page;
+pub use markdown::{parse_page, PageElement, get_page_structured};
 pub use site::{Page, PageType, Collection, Zap};
 pub use template::{TemplateRenderer, TemplateError};
 pub use builder::{SiteBuilder, Site, NavItem, BuildError, RenderError};
