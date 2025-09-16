@@ -1,9 +1,14 @@
 {% extends "layouts/base.html" %}
 {% block body %}
-<main class="max-w-7xl mx-auto">
-    <h1 class="text-center font-bold">The changelog page theme whatever</h1>
-    <div class="prose mx-auto py-12 dark:prose-invert">
-        {{ page_content | safe }}
+<main class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-foreground mb-4">Changelog</h1>
+            <p class="text-lg text-muted-foreground">Keep track of all the latest updates and improvements</p>
+        </header>
+        <article class="prose prose-lg mx-auto dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-code:text-primary">
+            {{ page_content | safe }}
+        </article>
     </div>
 </main>
 {% endblock body %}

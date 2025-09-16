@@ -1,20 +1,37 @@
 {% extends "layouts/base.html" %}
 {% block body %}
-<main class="flex max-w-7xl mx-auto lg:py-12 py-8">
-    <aside class="flex-1 px-4">
-        <div class="flex flex-col space-y-4">
-            {% for l in collection_pages %}
-            <a href="{{l.link}}" class="block text-white">{{l.text}}</a>
-            {% endfor %}
+<main class="container mx-auto px-4 py-8">
+    <div class="flex gap-8">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 shrink-0 hidden lg:block">
+            <div class="sticky top-24 bg-card border border-border rounded-lg p-6">
+                <h3 class="font-semibold text-foreground mb-4">In this section</h3>
+                <nav class="space-y-2">
+                    {% for l in collection_pages %}
+                    <a href="{{l.link}}" class="block text-muted-foreground hover:text-primary transition-colors py-1 text-sm">{{l.text}}</a>
+                    {% endfor %}
+                </nav>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="flex-1 min-w-0">
+            <article class="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-code:text-primary">
+                {{ page_content | safe }}
+            </article>
         </div>
-    </aside>
-    <div class="">
-        <div class="prose mx-auto prose-md dark:prose-invert">
-            {{ page_content | safe }}
-        </div>
-    </div>
-    <div class=" flex-1 px-4">
-        <p class="text-white">Eventual TOC</p>
+        
+        <!-- Table of Contents -->
+        <aside class="w-64 shrink-0 hidden xl:block">
+            <div class="sticky top-24 bg-card border border-border rounded-lg p-6">
+                <h3 class="font-semibold text-foreground mb-4">On this page</h3>
+                <nav class="space-y-2">
+                    <div class="text-sm text-muted-foreground">
+                        <p>Table of contents will be auto-generated from headings</p>
+                    </div>
+                </nav>
+            </div>
+        </aside>
     </div>
 </main>
 {% endblock body %}

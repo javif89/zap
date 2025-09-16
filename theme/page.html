@@ -1,8 +1,10 @@
 {% extends "layouts/base.html" %}
 {% block body %}
-<main class="max-w-7xl mx-auto">
-    <div class="prose mx-auto py-12 dark:prose-invert">
-        {{ page_content | safe }}
+<main class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <article class="prose prose-lg mx-auto dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-code:text-primary">
+            {{ page_content | safe }}
+        </article>
     </div>
 </main>
 {% endblock body %}
