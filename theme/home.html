@@ -2,10 +2,11 @@
 {% block body %}
 <main>
     <!-- Hero Section -->
-    <section class="hero-gradient text-primary-foreground relative overflow-hidden">
-        <div class="absolute inset-0 bg-black/20"></div>
+    {% if home.hero %}
+    <section class="relative overflow-hidden">
         <div class="relative container mx-auto px-4 py-24 md:py-32">
             <div class="max-w-4xl mx-auto text-center">
+                {% if site.small_tag %}
                 <div class="mb-8">
                     <span class="badge-outline mb-6">
                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -14,14 +15,15 @@
                         {{ site.small_tag }}
                     </span>
                 </div>
-                <h1 class="text-5xl md:text-7xl font-bold mb-6 text-primary-foreground">
+                {% endif %}
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 text-primary">
                     {{ site.title }}
                 </h1>
-                <p class="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto font-light">
+                <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto font-light">
                     {{ site.tagline }}
                 </p>
                 {% if site.secondary_tagline %}
-                <p class="text-lg text-primary-foreground/80 mb-12 max-w-2xl mx-auto">
+                <p class="text-lg mb-12 max-w-2xl mx-auto">
                     {{ site.secondary_tagline }}
                 </p>
                 {% endif %}
@@ -29,48 +31,27 @@
                     {% if home.primary_action %}
                     <a href="{{ home.primary_action.link }}" class="btn-lg-primary">
                         {{ home.primary_action.text }}
-                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                        </svg>
                     </a>
                     {% endif %}
                     {% if home.secondary_action %}
                     <a href="{{ home.secondary_action.link }}" class="btn-lg-outline">
-                        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8a2 2 0 002-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v4a2 2 0 002 2z"/>
-                        </svg>
                         {{ home.secondary_action.text }}
                     </a>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <!-- Decorative elements -->
-        <div class="absolute top-20 left-10 w-20 h-20 bg-primary-foreground/10 rounded-full blur-xl"></div>
-        <div class="absolute bottom-20 right-10 w-32 h-32 bg-accent/20 rounded-full blur-xl"></div>
     </section>
+    {% endif %}
 
     <!-- Features Section -->
     {% if home.features and home.features|length > 0 %}
     <section class="py-12">
         <div class="container mx-auto px-4">
-            <h1 class="text-center font-bold text-2xl mb-8">Features</h1>
             <div class="grid md:grid-cols-3 gap-8 container-wide">
                 {% for feature in home.features %}
                 <div class="card">
                     <header>
-                        <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                {% if loop.index == 1 %}
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                {% elif loop.index == 2 %}
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                {% else %}
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v4a2 2 0 002 2h4M11 7h4"/>
-                                {% endif %}
-                            </svg>
-                        </div>
                         <h3>{{ feature.title }}</h3>
                     </header>
                     <section>
@@ -84,10 +65,10 @@
     {% endif %}
 
     <!-- Content Section -->
-    <section class="py-16 bg-muted">
+    <section class="py-12 bg-background">
         <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
-                <div class="prose prose-lg mx-auto dark:prose-invert">
+                <div class="prose prose-lg prose-zinc mx-auto dark:prose-invert">
                     {{ page_content | safe }}
                 </div>
             </div>

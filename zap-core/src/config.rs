@@ -40,13 +40,16 @@ pub struct Config {
 impl Config {
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
         let data = std::fs::read_to_string(path)?;
+        println!("{data:?}");
         let config: Config = toml::from_str(&data)?;
+        println!("{config:?}");
 
         Ok(config)
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(default)]
 pub struct SiteConfig {
     pub title: Option<String>,
     pub tagline: Option<String>,
@@ -54,44 +57,35 @@ pub struct SiteConfig {
     pub small_tag: Option<String>,
 }
 
-impl SiteConfig {
-    pub fn with_defaults(mut self) -> Self {
-        if self.title.is_none() {
-            self.title = Some("Zap".to_string());
+impl Default for SiteConfig {
+    fn default() -> Self {
+        Self {
+            title: Some("Zap".into()),
+            tagline: Some("A modern static site generator that creates beautiful project websites with minimal configuration".to_string()),
+            secondary_tagline: None,
+            small_tag: None,
         }
-        if self.tagline.is_none() {
-            self.tagline = Some("A modern static site generator".to_string());
-        }
-        if self.small_tag.is_none() {
-            self.small_tag = Some("Open Source • Zero Configuration".to_string());
-        }
-        self
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(default)]
 pub struct HomeConfig {
+    pub hero: bool,
     pub primary_action: Option<Link>,
     pub secondary_action: Option<Link>,
     #[serde(default)]
     pub features: Vec<Feature>,
 }
 
-impl HomeConfig {
-    pub fn with_defaults(mut self) -> Self {
-        if self.primary_action.is_none() {
-            self.primary_action = Some(Link {
-                text: "Get Started".to_string(),
-                link: "/getting-started".to_string(),
-            });
+impl Default for HomeConfig {
+    fn default() -> Self {
+        Self {
+            hero: true,
+            primary_action: None,
+            secondary_action: None,
+            features: Vec::new(),
         }
-        if self.secondary_action.is_none() {
-            self.secondary_action = Some(Link {
-                text: "Documentation".to_string(),
-                link: "/docs".to_string(),
-            });
-        }
-        self
     }
 }
 

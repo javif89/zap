@@ -11,6 +11,7 @@ struct NavItem {
 }
 fn main() {
     let cfg = Config::read("./zap.toml").unwrap_or_default();
+    println!("{cfg:#?}");
     let tera = match Tera::new("theme/**/*.html") {
         Ok(t) => t,
         Err(e) => {
