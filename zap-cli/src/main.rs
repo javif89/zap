@@ -1,8 +1,8 @@
-use std::path::PathBuf;
+use std::{error::Error, path::PathBuf};
 
 use serde::Serialize;
 use tera::{Context, Tera};
-use zap_core::PageType;
+use zap_core::{PageType, config::Config};
 
 #[derive(Serialize)]
 struct NavItem {
@@ -10,6 +10,7 @@ struct NavItem {
     link: String,
 }
 fn main() {
+    let cfg = Config::read("./zap.toml").unwrap_or_default();
     let tera = match Tera::new("theme/**/*.html") {
         Ok(t) => t,
         Err(e) => {
@@ -38,7 +39,11 @@ fn main() {
         });
     }
 
-    context.insert("title", "This should be title");
+    // Build context
+    let site_config = cfg.site.unwrap_or_default();
+    context.insert("site", &site_config);
+    let home_config = cfg.home.unwrap_or_default();
+    context.insert("home", &home_config);
     context.insert("secondary_nav", &navigation);
 
     let _ = std::fs::create_dir_all("out");
@@ -50,12 +55,15 @@ fn main() {
         println!("{} -> {}", p.path.display(), p.out_path().display());
         context.insert("page_content", &zap.render_page(p));
         let template = get_page_template(p);
-        if let Ok(s) = tera.render(&template, &context) {
-            let _ = std::fs::create_dir_all(out.join(p.out_path().with_file_name("")));
-            match std::fs::write(out.join(p.out_path()), s) {
-                Ok(_) => println!("Rendered successfully"),
-                Err(e) => eprintln!("Render err: {}", e),
+        match tera.render(&template, &context) {
+            Ok(s) => {
+                let _ = std::fs::create_dir_all(out.join(p.out_path().with_file_name("")));
+                match std::fs::write(out.join(p.out_path()), s) {
+                    Ok(_) => println!("Rendered successfully"),
+                    Err(e) => eprintln!("Failed to render: {e:?}"),
+                }
             }
+            Err(e) => eprintln!("Tera err: {:?}", e),
         }
     }
 

@@ -11,31 +11,31 @@
                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                         </svg>
-                        Open Source • Zero Configuration
+                        {{ site.small_tag }}
                     </span>
                 </div>
                 <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                    Zap
+                    {{ site.title }}
                 </h1>
                 <p class="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto font-light">
-                    A modern static site generator that creates beautiful project websites with minimal configuration
+                    {{ site.tagline }}
                 </p>
+                {% if site.secondary_tagline %}
                 <p class="text-lg text-blue-200 mb-12 max-w-2xl mx-auto">
-                    Transform your markdown documentation into stunning websites in seconds. Built with Rust for speed and reliability.
+                    {{ site.secondary_tagline }}
                 </p>
+                {% endif %}
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="#get-started" class="inline-flex items-center px-8 py-4 rounded-lg bg-white text-blue-600 font-semibold hover:bg-blue-50 transition-colors shadow-lg">
-                        Get Started
-                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                        </svg>
+                    {% if home.primary_action %}
+                    <a href="{{ home.primary_action.link }}" class="inline-flex items-center px-8 py-4 rounded-lg bg-white text-blue-600 font-semibold hover:bg-blue-50 transition-colors shadow-lg">
+                        {{ home.primary_action.text }}
                     </a>
-                    <a href="#demo" class="inline-flex items-center px-8 py-4 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
-                        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8a2 2 0 002-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v4a2 2 0 002 2z"/>
-                        </svg>
-                        View Demo
+                    {% endif %}
+                    {% if home.primary_action %}
+                    <a href="{{ home.secondary_action.link }}" class="inline-flex items-center px-8 py-4 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
+                       {{ home.secondary_action.text }} 
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

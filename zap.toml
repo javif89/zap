@@ -1,0 +1,14 @@
+[site]
+title = "Zap"
+tagline = "A modern static site generator that creates beautiful project websites with minimal configuration"
+secondary_tagline = "Transform your markdown documentation into stunning websites in seconds. Built with Rust for speed and reliability."
+small_tag = "Open Source • Zero Configuration"
+
+[home]
+primary_action = { text = "Get Started", link = "/quick-start" }
+secondary_action = { text = "Documentation", link = "/docs" }
+features = [
+    { title = "Lightning fast", description = "Built with Rust for incredible performance. Generate your entire site in milliseconds, not seconds." },
+    { title = "Zero Configuration", description = "Just point Zap at your markdown files and get a beautiful website. No complex configuration files needed." },
+    { title = "Beautiful Themes", description = "Modern, responsive designs that look great on all devices. Dark mode support included out of the box." },
+]
