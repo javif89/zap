@@ -1,6 +1,7 @@
 @import "tailwindcss" source(".");
-@plugin "@tailwindcss/typography";
-/* @import "./themes/default.css"; */
+@custom-variant dark (&:where(.dark, .dark *));
+@plugin "tailwindcss/prose";
+/* @import "./prose.css"; */
 @import "./themes/yellow.css";
 
 /* Custom utility classes using BasecoatUI variables for seamless theming */
@@ -24,21 +25,15 @@
 }
 
 .hero-title {
-    @apply text-5xl md:text-7xl font-bold mb-6;
-    background: linear-gradient(to right, white 0%, rgba(255, 255, 255, 0.8) 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    @apply text-5xl md:text-7xl font-bold mb-6 text-primary-foreground;
 }
 
 .hero-subtitle {
-    @apply text-xl md:text-2xl mb-8 font-light;
-    color: rgba(255, 255, 255, 0.9);
+    @apply text-xl md:text-2xl mb-8 font-light text-primary-foreground/90;
 }
 
 .hero-description {
-    @apply text-lg mb-12;
-    color: rgba(255, 255, 255, 0.8);
+    @apply text-lg mb-12 text-primary-foreground/80;
 }
 
 .sidebar-section {
