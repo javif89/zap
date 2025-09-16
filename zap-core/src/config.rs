@@ -54,12 +54,45 @@ pub struct SiteConfig {
     pub small_tag: Option<String>,
 }
 
+impl SiteConfig {
+    pub fn with_defaults(mut self) -> Self {
+        if self.title.is_none() {
+            self.title = Some("Zap".to_string());
+        }
+        if self.tagline.is_none() {
+            self.tagline = Some("A modern static site generator".to_string());
+        }
+        if self.small_tag.is_none() {
+            self.small_tag = Some("Open Source • Zero Configuration".to_string());
+        }
+        self
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct HomeConfig {
     pub primary_action: Option<Link>,
     pub secondary_action: Option<Link>,
     #[serde(default)]
     pub features: Vec<Feature>,
+}
+
+impl HomeConfig {
+    pub fn with_defaults(mut self) -> Self {
+        if self.primary_action.is_none() {
+            self.primary_action = Some(Link {
+                text: "Get Started".to_string(),
+                link: "/getting-started".to_string(),
+            });
+        }
+        if self.secondary_action.is_none() {
+            self.secondary_action = Some(Link {
+                text: "Documentation".to_string(),
+                link: "/docs".to_string(),
+            });
+        }
+        self
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]

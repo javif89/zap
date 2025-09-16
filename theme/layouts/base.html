@@ -7,7 +7,7 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
    <link rel="stylesheet" href="/style.css">
-   <title>{{site.title}}</title>
+   <title>{{ site.title | default(value="Zap") }}</title>
 </head>
 <body class="bg-background text-foreground min-h-screen">
    <header class="sticky top-0 z-50 w-full bg-nav nav-backdrop border-b border-border">
@@ -18,7 +18,7 @@
                   <svg class="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
                      <path d="M13 3l3.293 3.293-7 7a1 1 0 0 0 0 1.414l2 2a1 1 0 0 0 1.414 0l7-7L23 13V3h-10zM4 14l1.293-1.293 1.414 1.414-1.293 1.293a1 1 0 0 0 0 1.414l2 2a1 1 0 0 0 1.414 0l7.793-7.793 1.414 1.414L9.242 19.242a3 3 0 0 1-4.242 0l-2-2a3 3 0 0 1 0-4.242L4 14z"/>
                   </svg>
-                  <span class="text-foreground text-xl font-semibold">{{site.title}}</span>
+                  <span class="text-foreground text-xl font-semibold">{{ site.title | default(value="Zap") }}</span>
                </div>
                <nav class="hidden md:flex items-center space-x-6">
                   {% for item in secondary_nav %}

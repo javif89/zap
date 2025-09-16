@@ -29,11 +29,17 @@
                     {% if home.primary_action %}
                     <a href="{{ home.primary_action.link }}" class="inline-flex items-center px-8 py-4 rounded-lg bg-white text-blue-600 font-semibold hover:bg-blue-50 transition-colors shadow-lg">
                         {{ home.primary_action.text }}
+                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
                     </a>
                     {% endif %}
-                    {% if home.primary_action %}
+                    {% if home.secondary_action %}
                     <a href="{{ home.secondary_action.link }}" class="inline-flex items-center px-8 py-4 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
-                       {{ home.secondary_action.text }} 
+                        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8a2 2 0 002-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                        </svg>
+                        {{ home.secondary_action.text }}
                     </a>
                     {% endif %}
                 </div>
@@ -45,44 +51,33 @@
     </section>
 
     <!-- Features Section -->
-    <section class="py-24 bg-background">
+    {% if home.features and home.features|length > 0 %}
+    <section class="py-12 bg-background">
         <div class="container mx-auto px-4">
-            <div class="max-w-3xl mx-auto text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-foreground mb-6">Why Choose Zap?</h2>
-                <p class="text-lg text-muted-foreground">Everything you need to create beautiful documentation websites, with zero configuration required.</p>
-            </div>
+            <h1 class="text-center font-bold text-2xl text-black dark:text-white mb-8">Features</h1>
             <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                {% for feature in home.features %}
                 <div class="bg-card p-8 rounded-xl border border-border hover:shadow-lg transition-shadow">
                     <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {% if loop.index == 1 %}
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-foreground mb-4">Lightning Fast</h3>
-                    <p class="text-muted-foreground">Built with Rust for incredible performance. Generate your entire site in milliseconds, not seconds.</p>
-                </div>
-                <div class="bg-card p-8 rounded-xl border border-border hover:shadow-lg transition-shadow">
-                    <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {% elif loop.index == 2 %}
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-foreground mb-4">Zero Configuration</h3>
-                    <p class="text-muted-foreground">Just point Zap at your markdown files and get a beautiful website. No complex configuration files needed.</p>
-                </div>
-                <div class="bg-card p-8 rounded-xl border border-border hover:shadow-lg transition-shadow">
-                    <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {% else %}
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v4a2 2 0 002 2h4M11 7h4"/>
+                            {% endif %}
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold text-foreground mb-4">Beautiful Themes</h3>
-                    <p class="text-muted-foreground">Modern, responsive designs that look great on all devices. Dark mode support included out of the box.</p>
+                    <h3 class="text-xl font-semibold text-foreground mb-4">{{ feature.title }}</h3>
+                    <p class="text-muted-foreground">{{ feature.description }}</p>
                 </div>
+                {% endfor %}
             </div>
         </div>
     </section>
+    {% endif %}
 
     <!-- Content Section -->
     <section class="py-16 bg-muted/30">
