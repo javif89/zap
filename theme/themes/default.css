@@ -1,51 +1,51 @@
 /* Utility classes that use BasecoatUI variables for consistency */
 body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--background);
+    color: var(--foreground);
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom background utilities using BasecoatUI variables */
 .bg-sidebar {
-    background-color: hsl(var(--sidebar));
+    background-color: var(--sidebar);
 }
 
 /* Custom text utilities using BasecoatUI variables */
 .text-foreground { 
-    color: hsl(var(--foreground)); 
+    color: var(--foreground); 
 }
 
 .text-muted-foreground { 
-    color: hsl(var(--muted-foreground)); 
+    color: var(--muted-foreground); 
 }
 
 /* Border utilities */
 .border-border { 
-    border-color: hsl(var(--border)); 
+    border-color: var(--border); 
 }
 
 .border-sidebar { 
-    border-color: hsl(var(--sidebar-border)); 
+    border-color: var(--sidebar-border); 
 }
 
 /* Enhanced Prose Styling using BasecoatUI variables */
 .prose {
-    --tw-prose-body: hsl(var(--muted-foreground));
-    --tw-prose-headings: hsl(var(--foreground));
-    --tw-prose-lead: hsl(var(--muted-foreground));
-    --tw-prose-links: hsl(var(--primary));
-    --tw-prose-bold: hsl(var(--foreground));
-    --tw-prose-counters: hsl(var(--muted-foreground));
-    --tw-prose-bullets: hsl(var(--muted-foreground));
-    --tw-prose-hr: hsl(var(--border));
-    --tw-prose-quotes: hsl(var(--foreground));
-    --tw-prose-quote-borders: hsl(var(--border));
-    --tw-prose-captions: hsl(var(--muted-foreground));
-    --tw-prose-code: hsl(var(--primary));
-    --tw-prose-pre-code: hsl(var(--foreground));
-    --tw-prose-pre-bg: hsl(var(--muted));
-    --tw-prose-th-borders: hsl(var(--border));
-    --tw-prose-td-borders: hsl(var(--border));
+    --tw-prose-body: var(--muted-foreground);
+    --tw-prose-headings: var(--foreground);
+    --tw-prose-lead: var(--muted-foreground);
+    --tw-prose-links: var(--primary);
+    --tw-prose-bold: var(--foreground);
+    --tw-prose-counters: var(--muted-foreground);
+    --tw-prose-bullets: var(--muted-foreground);
+    --tw-prose-hr: var(--border);
+    --tw-prose-quotes: var(--foreground);
+    --tw-prose-quote-borders: var(--border);
+    --tw-prose-captions: var(--muted-foreground);
+    --tw-prose-code: var(--primary);
+    --tw-prose-pre-code: var(--foreground);
+    --tw-prose-pre-bg: var(--muted);
+    --tw-prose-th-borders: var(--border);
+    --tw-prose-td-borders: var(--border);
 }
 
 .prose h1 {
@@ -54,7 +54,7 @@ body {
     line-height: 1.2;
     margin-bottom: 1rem;
     margin-top: 0;
-    border-bottom: 1px solid hsl(var(--border));
+    border-bottom: 1px solid var(--border);
     padding-bottom: 0.5rem;
 }
 
@@ -88,7 +88,7 @@ body {
 }
 
 .prose a {
-    color: hsl(var(--primary));
+    color: var(--primary);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s ease;
@@ -99,8 +99,8 @@ body {
 }
 
 .prose code {
-    color: hsl(var(--primary));
-    background-color: hsl(var(--muted));
+    color: var(--primary);
+    background-color: var(--muted);
     padding: 0.125rem 0.25rem;
     border-radius: var(--radius);
     font-size: 0.875em;
@@ -108,8 +108,8 @@ body {
 }
 
 .prose pre {
-    background-color: hsl(var(--muted));
-    border: 1px solid hsl(var(--border));
+    background-color: var(--muted);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1rem;
     overflow-x: auto;
@@ -119,13 +119,13 @@ body {
 .prose pre code {
     background-color: transparent;
     padding: 0;
-    color: hsl(var(--foreground));
+    color: var(--foreground);
     font-size: 0.875rem;
 }
 
 .prose blockquote {
-    border-left: 4px solid hsl(var(--primary));
-    background-color: hsl(var(--muted));
+    border-left: 4px solid var(--primary);
+    background-color: var(--muted);
     padding: 1rem 1.5rem;
     margin: 1.5rem 0;
     border-radius: 0 var(--radius) var(--radius) 0;
@@ -154,18 +154,18 @@ body {
 
 .prose th,
 .prose td {
-    border: 1px solid hsl(var(--border));
+    border: 1px solid var(--border);
     padding: 0.75rem;
     text-align: left;
 }
 
 .prose th {
-    background-color: hsl(var(--muted));
+    background-color: var(--muted);
     font-weight: 600;
 }
 
 .prose hr {
     border: none;
-    border-top: 1px solid hsl(var(--border));
+    border-top: 1px solid var(--border);
     margin: 2rem 0;
 }

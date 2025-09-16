@@ -5,14 +5,14 @@
 
 /* Custom utility classes using BasecoatUI variables for seamless theming */
 .hero-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
 .nav-backdrop {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    background-color: hsl(var(--background) / 0.8);
-    border-bottom: 1px solid hsl(var(--border));
+    background-color: color-mix(in srgb, var(--background) 80%, transparent);
+    border-bottom: 1px solid var(--border);
 }
 
 .container-narrow {
@@ -47,16 +47,16 @@
 
 .sidebar-title {
     @apply font-semibold text-sm uppercase tracking-wide mb-4;
-    color: hsl(var(--sidebar-foreground));
+    color: var(--sidebar-foreground);
 }
 
 .sidebar-link {
     @apply block py-2 px-3 rounded-md text-sm transition-colors;
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     border-radius: var(--radius);
 }
 
 .sidebar-link:hover {
-    background-color: hsl(var(--sidebar-accent));
-    color: hsl(var(--sidebar-accent-foreground));
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
 }
