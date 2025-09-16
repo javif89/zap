@@ -9,8 +9,10 @@ repository.workspace = true
 homepage.workspace = true
 
 [dependencies]
+html-escape = "0.2.13"
 pulldown-cmark = "0.13.0"
 serde = { version = "1.0.225", features = ["derive"] }
 serde_toml = "0.0.1"
+syntect = "5.2.0"
 toml = "0.9.6"
 walkdir = "2.5.0"

@@ -46,6 +46,23 @@
     --tw-prose-td-borders: var(--border);
 }
 
+/* Syntax highlighting overrides to work with BasecoatUI theme */
+.prose pre {
+    background-color: transparent !important;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    padding: 1rem;
+    margin: 1.5rem 0;
+}
+
+.prose pre code {
+    background-color: transparent !important;
+    color: var(--foreground) !important;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
 /* Custom utility classes using BasecoatUI variables for seamless theming */
 .hero-gradient {
     background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);

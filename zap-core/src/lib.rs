@@ -4,17 +4,72 @@ use std::{
     sync::LazyLock,
 };
 
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, html};
+use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, html, CodeBlockKind};
+use syntect::highlighting::ThemeSet;
+use syntect::html::highlighted_html_for_string;
+use syntect::parsing::SyntaxSet;
 use walkdir::WalkDir;
+
+// Initialize syntax highlighting resources once
+static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(|| SyntaxSet::load_defaults_newlines());
+static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(|| ThemeSet::load_defaults());
 
 pub fn parse_page(path: &str) -> Result<String, std::io::Error> {
     let content = std::fs::read_to_string(path)?;
     let options = Options::all();
     let parser = Parser::new_ext(&content, options);
 
-    let mut out = String::new();
+    let events: Vec<Event> = parser.collect();
+    let mut processed_events = Vec::new();
+    let mut i = 0;
 
-    html::push_html(&mut out, parser);
+    while i < events.len() {
+        match &events[i] {
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) => {
+                // Collect all text events until the end of the code block
+                let mut code_content = String::new();
+                i += 1; // Skip the start event
+                
+                while i < events.len() {
+                    match &events[i] {
+                        Event::End(TagEnd::CodeBlock) => break,
+                        Event::Text(text) => code_content.push_str(text),
+                        _ => {} // Ignore other events inside code blocks
+                    }
+                    i += 1;
+                }
+
+                // Generate syntax highlighted HTML
+                let syntax = SYNTAX_SET.find_syntax_by_token(lang)
+                    .or_else(|| {
+                        // Fallback mappings for unsupported languages
+                        match lang.as_ref() {
+                            "nix" => SYNTAX_SET.find_syntax_by_name("JavaScript"), // Nix has similar structure
+                            "toml" => SYNTAX_SET.find_syntax_by_name("YAML"), // TOML similar to YAML
+                            _ => None
+                        }
+                    });
+
+                let highlighted_html = if let Some(syntax) = syntax {
+                    let theme = &THEME_SET.themes["base16-ocean.dark"];
+                    highlighted_html_for_string(&code_content, &SYNTAX_SET, syntax, theme)
+                        .unwrap_or_else(|_| format!("<pre><code>{}</code></pre>", html_escape::encode_text(&code_content)))
+                } else {
+                    println!("No syntax found for language: {}", lang);
+                    format!("<pre><code>{}</code></pre>", html_escape::encode_text(&code_content))
+                };
+
+                processed_events.push(Event::Html(highlighted_html.into()));
+            }
+            _ => {
+                processed_events.push(events[i].clone());
+            }
+        }
+        i += 1;
+    }
+
+    let mut out = String::new();
+    html::push_html(&mut out, processed_events.into_iter());
 
     Ok(out)
 }
