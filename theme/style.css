@@ -1,3 +1,44 @@
 @import "tailwindcss" source(".");
 @plugin "@tailwindcss/typography";
 @import "./themes/default.css";
+
+/* Custom utility classes for elements not covered by BasecoatUI */
+.hero-gradient {
+    @apply bg-gradient-to-br from-blue-600 to-purple-600;
+}
+
+.nav-backdrop {
+    @apply backdrop-blur-lg;
+}
+
+.container-narrow {
+    @apply max-w-4xl mx-auto;
+}
+
+.container-wide {
+    @apply max-w-6xl mx-auto;
+}
+
+.hero-title {
+    @apply text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent;
+}
+
+.hero-subtitle {
+    @apply text-xl md:text-2xl text-blue-100 mb-8 font-light;
+}
+
+.hero-description {
+    @apply text-lg text-blue-200 mb-12;
+}
+
+.sidebar-section {
+    @apply sticky top-16 p-6 pt-8;
+}
+
+.sidebar-title {
+    @apply font-semibold text-sm uppercase tracking-wide mb-4;
+}
+
+.sidebar-link {
+    @apply block py-2 px-3 rounded-md text-sm transition-colors hover:bg-muted;
+}

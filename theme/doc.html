@@ -3,11 +3,11 @@
 <div class="flex min-h-screen">
     <!-- Sidebar Navigation -->
     <aside class="w-64 shrink-0 hidden lg:block bg-sidebar border-r border-border">
-        <div class="sticky top-16 p-6 pt-8">
-            <h3 class="font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">In this section</h3>
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">In this section</h3>
             <nav class="space-y-1">
                 {% for l in collection_pages %}
-                <a href="{{l.link}}" class="block text-muted-foreground hover:text-primary transition-colors py-2 px-3 rounded-md hover:bg-muted text-sm">{{l.text}}</a>
+                <a href="{{l.link}}" class="sidebar-link">{{l.text}}</a>
                 {% endfor %}
             </nav>
         </div>
@@ -15,7 +15,7 @@
     
     <!-- Main Content -->
     <main class="flex-1 min-w-0">
-        <div class="container mx-auto px-6 py-8 max-w-4xl">
+        <div class="container-narrow px-6 py-8">
             <article class="prose prose-lg dark:prose-invert">
                 {{ page_content | safe }}
             </article>
@@ -24,8 +24,8 @@
     
     <!-- Table of Contents -->
     <aside class="w-64 shrink-0 hidden xl:block bg-sidebar border-l border-border">
-        <div class="sticky top-16 p-6 pt-8">
-            <h3 class="font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">On this page</h3>
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">On this page</h3>
             <nav class="space-y-1">
                 <div class="text-sm text-muted-foreground">
                     <p>Table of contents will be auto-generated from headings</p>
