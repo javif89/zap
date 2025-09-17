@@ -1,6 +1,6 @@
-# Zap SSG from readme
+# Zap SSG
 
-A modern static site generator that creates beautiful project websites with (near) zero configuration. (It worked. not default).
+A modern static site generator that creates beautiful project websites with (near) zero configuration.
 
 This is the info from the site, not the default.
 

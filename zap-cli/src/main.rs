@@ -1,8 +1,4 @@
-use zap_core::{
-    NavItem, Page, PageElement, PageType, SiteBuilder, SiteScanner,
-    config::{Config, SiteConfig},
-    markdown::get_page_structured,
-};
+use zap_core::{NavItem, PageElement, PageType, SiteBuilder, SiteScanner, config::Config};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Read configuration
@@ -28,24 +24,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    let mut home_config = config.home.unwrap_or_default();
+    let home_config = config.home.unwrap_or_default();
     let mut site_config = config.site.unwrap_or_default();
-    let home = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
+    let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
 
-    if home.is_some() {
-        let h = home
-            .unwrap()
-            .elements()
-            .into_iter()
-            .find_map(|el| match el {
+    // Build config by filling in as much as we can from README.md
+    // before going to defaults
+    site_config.title = home_page
+        .and_then(|p| {
+            p.elements().into_iter().find_map(|el| match el {
                 PageElement::Heading { level: 1, text } => Some(text),
                 _ => None,
-            });
+            })
+        })
+        .or_else(|| Some("Zap Site".into()));
 
-        if h.is_some() {
-            site_config.title = Some(h.unwrap());
-        }
-    }
+    site_config.title = home_page
+        .and_then(|home| {
+            home.elements().into_iter().find_map(|el| match el {
+                PageElement::Heading { level: 1, text } => Some(text),
+                _ => None,
+            })
+        })
+        .or_else(|| Some("Zap".to_string())); // Final fallback
+
+    // Could do similar for tagline from first paragraph
+    site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
 
     // BUILD - Assemble the site
     let mut builder = SiteBuilder::new()

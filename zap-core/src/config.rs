@@ -58,8 +58,8 @@ pub struct SiteConfig {
 impl Default for SiteConfig {
     fn default() -> Self {
         Self {
-            title: Some("Zap".into()),
-            tagline: Some("A modern static site generator that creates beautiful project websites with minimal configuration".to_string()),
+            title: None,
+            tagline: None,
             secondary_tagline: None,
             small_tag: None,
         }

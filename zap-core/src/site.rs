@@ -40,13 +40,8 @@ impl Page {
         }
     }
 
-    pub fn get_structured_elements(&self, source_dir: &Path) -> Vec<PageElement> {
-        let full_path = source_dir.join(&self.path);
-        get_page_structured(&full_path)
-    }
-
-    pub fn get_first_heading(&self, source_dir: &Path) -> Option<String> {
-        self.get_structured_elements(source_dir)
+    pub fn get_first_heading(&self) -> Option<String> {
+        self.elements()
             .into_iter()
             .find_map(|element| match element {
                 PageElement::Heading { text, .. } => Some(text),
@@ -54,15 +49,8 @@ impl Page {
             })
     }
 
-    // pub fn get_first(&self, element: PageElement) -> Option<PageElement> {
-    //     &self.elements().into_iter().find_map(|el| match el {
-    //         element => Some(el.to_owned()),
-    //         _ => None,
-    //     })
-    // }
-
-    pub fn get_first_paragraph(&self, source_dir: &Path) -> Option<String> {
-        self.get_structured_elements(source_dir)
+    pub fn get_first_paragraph(&self) -> Option<String> {
+        self.elements()
             .into_iter()
             .find_map(|element| match element {
                 PageElement::Paragraph { text } => Some(text),
