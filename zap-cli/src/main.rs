@@ -10,17 +10,20 @@ fn create_clap_app() -> Command {
             .author("Javier Feliz <me@javierfeliz.com>")
     )
     .subcommand(cmd::build::make_subcommand())
+    .subcommand(cmd::serve::make_subcommand())
     .subcommand(
         Command::new("version")
             .about("Show version information")
     )
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let matches = create_clap_app().get_matches();
 
     let result = match matches.subcommand() {
         Some(("build", sub_matches)) => cmd::build::execute(sub_matches),
+        Some(("serve", sub_matches)) => cmd::serve::execute(sub_matches).await,
         Some(("version", _)) => {
             println!("zap {}", env!("CARGO_PKG_VERSION"));
             Ok(())

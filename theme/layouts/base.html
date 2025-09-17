@@ -12,6 +12,24 @@
    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/all.min.js" defer></script>
    <link rel="stylesheet" href="/style.css">
    <title>{{ site.title | default(value="Zap") }}</title>
+   {% if livereload %}
+   <script>
+   (function() {
+       const socket = new WebSocket('ws://{{ livereload }}//__livereload');
+       socket.onmessage = function(event) {
+           if (event.data === 'reload') {
+               location.reload();
+           }
+       };
+       socket.onclose = function() {
+           console.log('Live reload disconnected');
+       };
+       window.addEventListener('beforeunload', function() {
+           socket.close();
+       });
+   })();
+   </script>
+   {% endif %}
 </head>
 <body class="bg-background text-foreground min-h-screen">
    <header class="sticky top-0 z-50 w-full nav-backdrop">

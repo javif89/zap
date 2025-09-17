@@ -122,7 +122,7 @@ pub fn execute(args: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn title_case(s: &str) -> String {
+pub fn title_case(s: &str) -> String {
     s.split_whitespace()
         .map(|word| {
             let mut chars = word.chars();
