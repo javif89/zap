@@ -155,13 +155,53 @@ pub fn get_page_structured(path: &std::path::PathBuf) -> Vec<PageElement> {
             }
             Event::End(_) => {
                 if let Some(builder) = stack.pop() {
-                    let element = builder.build();
-                    if stack.is_empty() {
-                        if let Some(elem) = element {
-                            elements.push(elem);
+                    // Special handling for list items
+                    if matches!(builder.kind, BuilderKind::ListItem(_)) {
+                        // List items should add their content to the parent list
+                        if let Some(parent) = stack.last_mut() {
+                            if matches!(parent.kind, BuilderKind::List(_)) {
+                                parent.list_items.push(ListItem {
+                                    content: builder.inline_content,
+                                    sub_items: Vec::new(),
+                                    checked: None,
+                                });
+                            }
                         }
-                    } else if let Some(parent) = stack.last_mut() {
-                        parent.add_child(element);
+                    } else if matches!(builder.kind, BuilderKind::Emphasis(_) | BuilderKind::Strikethrough | BuilderKind::Link(_, _) | BuilderKind::Image(_, _)) {
+                        // Inline elements should be added to the parent's inline content
+                        if let Some(parent) = stack.last_mut() {
+                            match builder.kind {
+                                BuilderKind::Emphasis(level) => {
+                                    parent.add_inline(InlineElement::Emphasis {
+                                        level,
+                                        content: builder.inline_content,
+                                    });
+                                }
+                                BuilderKind::Strikethrough => {
+                                    parent.add_inline(InlineElement::Strikethrough {
+                                        content: builder.inline_content,
+                                    });
+                                }
+                                BuilderKind::Link(url, title) => {
+                                    let text = render_inline_elements_text(&builder.inline_content);
+                                    parent.add_inline(InlineElement::Link { text, url, title });
+                                }
+                                BuilderKind::Image(url, title) => {
+                                    let alt = render_inline_elements_text(&builder.inline_content);
+                                    parent.add_inline(InlineElement::Image { alt, url, title });
+                                }
+                                _ => {}
+                            }
+                        }
+                    } else {
+                        let element = builder.build();
+                        if stack.is_empty() {
+                            if let Some(elem) = element {
+                                elements.push(elem);
+                            }
+                        } else if let Some(parent) = stack.last_mut() {
+                            parent.add_child(element);
+                        }
                     }
                 }
             }
@@ -282,14 +322,8 @@ impl ElementBuilder {
                     self.block_content.push(elem);
                 }
                 BuilderKind::List(_) => {
-                    // Convert block element to list item
-                    if let PageElement::Paragraph { content } = elem {
-                        self.list_items.push(ListItem {
-                            content,
-                            sub_items: Vec::new(),
-                            checked: None,
-                        });
-                    }
+                    // List items are handled differently - they return a special ListItem element
+                    // that gets added to our list_items vec
                 }
                 _ => {}
             }
@@ -332,6 +366,11 @@ impl ElementBuilder {
                 Some(PageElement::BlockQuote {
                     content: self.block_content,
                 })
+            }
+            BuilderKind::ListItem(_) => {
+                // List items should be handled by their parent List
+                // We return None here, but the List builder should collect the inline content
+                None
             }
             _ => None,
         }

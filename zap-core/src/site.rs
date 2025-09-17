@@ -175,7 +175,8 @@ impl Zap {
     }
 
     pub fn render_page(&self, page: &Page) -> String {
-        crate::renderer::render_page(page)
+        let elements = page.elements();
+        crate::markdown::render_elements_to_html(&elements)
     }
 }
 

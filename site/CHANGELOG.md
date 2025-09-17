@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-09-16
+
+### Added
+
+- **Nucleo-Matcher Integration**: Lightning-fast fuzzy matching from the Helix editor team
+- **FuzzySearchable Trait**: Clean abstraction for fuzzy searching any data type
+- **FuzzyMatcher Utility**: Reusable fuzzy matching component for all plugins
+- **Primary/Secondary Key Support**: Smart scoring system that prioritizes primary matches over secondary ones
+- **Path-Based File Search**: Search files by directory path (e.g., "wallpapers/") alongside filename matching
+- **Intelligent Scoring**: Better relevance ranking with typo tolerance and smart prioritization
+- **Custom Freedesktop Integration**: Replaced complex GIO dependencies with clean, purpose-built freedesktop crate
+
+### Enhanced
+- **File Search Performance**: Dramatically faster search with better relevance ranking
+- **Desktop App Search**: Now uses fuzzy matching for much better app discovery
+- **Search Quality**: Fuzzy matching provides typo tolerance and intelligent substring matching
+- **Developer Experience**: Clean, reusable fuzzy search API for plugin developers
+- **Code Simplification**: Desktop app handling reduced from ~150 lines of complex GIO code to ~60 lines of clean, readable logic
+- **Dependency Reduction**: Eliminated heavy GIO dependencies in favor of lightweight, focused freedesktop crate
+
+### Technical
+- **Generic-Based Design**: Type-safe fuzzy matching without trait object overhead
+- **Zero-Copy Architecture**: Efficient matching that returns references to original data
+- **Configurable Limits**: Built-in result limiting for optimal performance
+- **Score-Based Ranking**: 90% penalty for secondary key matches ensures primary keys rank higher
+
+### Performance
+- **Blazing Fast Search**: Orders of magnitude faster than previous substring matching
+- **Scalable**: Consistent performance even with large file/app collections
+
+### Plugin Updates
+- **File Search**: Now matches both filenames and full paths with intelligent scoring
+- **Desktop Apps**: Fuzzy matching on application names with much better discovery
+- **Unified API**: All plugins use the same high-quality search infrastructure
+
+## [0.1.2] - 2025-09-16
+
+### Breaking Changes
+- **Architecture Revert**: Removed daemon-based architecture and returned to direct embedded launcher
+- **Removed Components**: Eliminated `waycast-daemon` and `waycast-protocol` crates
+
+### Added
+- **Direct UI Integration**: GTK application now constructs its own `WaycastLauncher` instance directly
+- **All Plugin Support**: Restored support for all plugins (drun, file_search, projects) in single process
+
+### Fixed
+- **Application Spawn Environment**: Fixed critical issue where launched applications lost display environment access
+- **VS Code Terminal Compatibility**: Applications launched through waycast now properly inherit display variables
+- **Session Preservation**: Changed from `setsid()` to `setpgid(0, 0)` to maintain session while detaching processes
+
+### Enhanced
+- **Development Experience**: Simplified architecture makes debugging and development easier
+
+### Technical
+- **Spawn Function Improvements**: Enhanced `spawn_detached` to explicitly preserve `WAYLAND_DISPLAY`, `DISPLAY`, `XDG_RUNTIME_DIR`, `XDG_SESSION_TYPE`, and `XDG_CURRENT_DESKTOP`
+- **Nix Development Shell**: Added proper display environment variable setup for VS Code integration
+- **Process Group Management**: Proper detachment without losing session context
+
+### Infrastructure
+- **Systemd Removal**: Eliminated systemd service installation and management
+
+## [0.1.1] - 2025-09-15
+
+### Enhanced
+
+**UI Startup Performance**: Loading icons async and caching results makes the UI load faster.
+
+## [0.1.0] - 2025-09-15
+
+This update introduces the waycast-daemon binary. Instead of re-doing all the computation of starting up plugins,
+scanning the file system and getting desktop entries every time the app starts, this will now happen in a long running
+background process.
+
+### Breaking Changes
+- **Architecture Refactor**: Moved from embedded launcher to daemon-based architecture
+
+### Added
+- **Waycast Daemon**: Background service for managing launcher state and plugins
+- **JSON-RPC Protocol**: Simple, debuggable communication protocol between GTK client and daemon
+- **Automatic Refresh**: Daemon periodically rescans applications and projects every 2 minutes
+- **Systemd Integration**: User service configuration for automatic daemon startup
+- **Home Manager Support**: Enhanced module with optional daemon service management
+
+### Enhanced
+- **Performance**: Persistent daemon keeps data indexed and ready. Should decrease UI startup time since launcher logic now lives in a separate long running process.
+
+### Technical
+- **Protocol Crates**: New `waycast-protocol` crate with client/server libraries
+- **Socket Utilities**: Automatic socket path resolution with fallbacks
+- **Error Handling**: Comprehensive protocol error types with proper propagation
+- **Thread Safety**: Arc/Mutex patterns for safe daemon state sharing
+- **Background Tasks**: Tokio-based async server with sync client compatibility
+
+### Infrastructure
+- **Service Definition**: Systemd user service file with proper dependencies
+- **Nix Integration**: Flake automatically installs systemd service configuration
+- **Build System**: Updated workspace with new protocol crate
+
 ## [0.0.3] - 2025-09-12
 
 ### Fixed

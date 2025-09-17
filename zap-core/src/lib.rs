@@ -1,7 +1,6 @@
 pub mod config;
 pub mod markdown;
 pub mod site;
-pub mod renderer;
 pub mod template;
 pub mod builder;
 pub mod scanner;

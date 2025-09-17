@@ -240,6 +240,11 @@ impl Site {
         &self.collections
     }
 
+    fn render_page(&self, page: &Page) -> String {
+        let elements = page.elements();
+        crate::markdown::render_elements_to_html(&elements)
+    }
+
     fn page_out_path(&self, page: &Page) -> PathBuf {
         // Convert absolute path to relative path for output
         let relative_path = page.path
@@ -272,7 +277,7 @@ impl Site {
         for page in &self.pages {
             let out_path = self.page_out_path(page);
             
-            let content = crate::renderer::render_page(page);
+            let content = self.render_page(page);
             self.renderer.add_to_context("page_content", &content);
             
             let output_path = self.output_dir.join(out_path);
@@ -295,7 +300,7 @@ impl Site {
             for page in &collection.pages {
                 let out_path = self.page_out_path(page);
                 
-                let content = crate::renderer::render_page(page);
+                let content = self.render_page(page);
                 self.renderer.add_to_context("page_content", &content);
                 self.renderer.add_to_context("collection_pages", &page_links);
                 
