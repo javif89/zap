@@ -29,7 +29,6 @@ impl Page {
     }
 
     pub fn elements(&self) -> Vec<PageElement> {
-        println!("My path is: {}", &self.path.display());
         get_page_structured(&self.path)
     }
 
@@ -115,7 +114,6 @@ impl Zap {
     }
 
     pub fn scan(&mut self) {
-        println!("Scanning: {}", &self.scan_path.display());
         for path in std::fs::read_dir(&self.scan_path)
             .expect("Failed to read scan path")
             .filter_map(|e| e.ok())

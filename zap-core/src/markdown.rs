@@ -49,7 +49,6 @@ pub fn parse_page(path: &str) -> Result<String, std::io::Error> {
                     highlighted_html_for_string(&code_content, &SYNTAX_SET, syntax, theme)
                         .unwrap_or_else(|_| format!("<pre><code>{}</code></pre>", html_escape::encode_text(&code_content)))
                 } else {
-                    println!("No syntax found for language: {}", lang);
                     format!("<pre><code>{}</code></pre>", html_escape::encode_text(&code_content))
                 };
 

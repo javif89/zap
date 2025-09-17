@@ -269,27 +269,20 @@ impl Site {
         std::fs::create_dir_all(&self.output_dir)?;
         
         // Render all pages
-        println!("Pages");
         for page in &self.pages {
-            println!("{}: {:?}", page.title, page.page_type);
             let out_path = self.page_out_path(page);
-            println!("{} -> {}", page.path.display(), out_path.display());
             
             let content = crate::renderer::render_page(&self.source_dir, page);
             self.renderer.add_to_context("page_content", &content);
             
             let output_path = self.output_dir.join(out_path);
-            match self.renderer.render_to_file(page.template_name(), &output_path) {
-                Ok(_) => println!("Rendered successfully"),
-                Err(e) => eprintln!("Failed to render: {:?}", e),
+            if let Err(e) = self.renderer.render_to_file(page.template_name(), &output_path) {
+                eprintln!("Failed to render {}: {:?}", page.title, e);
             }
         }
         
         // Render all collections
-        println!("Collections");
         for collection in &self.collections {
-            println!("{}", collection.name);
-            
             // Build collection navigation
             let mut page_links: Vec<NavItem> = Vec::new();
             for page in &collection.pages {
@@ -300,18 +293,15 @@ impl Site {
             }
             
             for page in &collection.pages {
-                println!("{}: {:?}", page.title, page.page_type);
                 let out_path = self.page_out_path(page);
-                println!("{} -> {}", page.path.display(), out_path.display());
                 
                 let content = crate::renderer::render_page(&self.source_dir, page);
                 self.renderer.add_to_context("page_content", &content);
                 self.renderer.add_to_context("collection_pages", &page_links);
                 
                 let output_path = self.output_dir.join(out_path);
-                match self.renderer.render_to_file("doc.html", &output_path) {
-                    Ok(_) => println!("Rendered successfully"),
-                    Err(e) => eprintln!("Render err: {}", e),
+                if let Err(e) = self.renderer.render_to_file("doc.html", &output_path) {
+                    eprintln!("Failed to render {}: {:?}", page.title, e);
                 }
             }
         }

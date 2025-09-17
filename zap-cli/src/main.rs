@@ -12,17 +12,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let scanner = SiteScanner::new("./site");
     let (pages, collections) = scanner.scan()?;
 
-    println!("Discovered:");
-    println!("Pages");
-    for p in &pages {
-        println!("- {}", p.title);
-    }
-
-    println!("Collections");
-    for c in &collections {
-        println!("- {}", c.name);
-    }
-
     // PROCESS - Build navigation from discovered content
     let source_dir = std::path::Path::new("./site");
     let mut navigation = Vec::new();
@@ -43,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut site_config = config.site.unwrap_or_default();
     let home = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
 
-    if site_config.title.is_none() && home.is_some() {
+    if home.is_some() {
         let h = home
             .unwrap()
             .elements()
@@ -52,9 +41,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 PageElement::Heading { level: 1, text } => Some(text),
                 _ => None,
             });
-
-        println!("Found home");
-        println!("{h:?}");
 
         if h.is_some() {
             site_config.title = Some(h.unwrap());

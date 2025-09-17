@@ -38,8 +38,6 @@ impl SiteScanner {
     }
 
     pub fn scan(&self) -> Result<(Vec<Page>, Vec<Collection>), ScanError> {
-        println!("Scanning: {}", self.source_dir.display());
-
         let pages = self.scan_pages()?;
         let collections = self.scan_collections()?;
 
@@ -52,7 +50,6 @@ impl SiteScanner {
         for entry in std::fs::read_dir(&self.source_dir)? {
             let entry = entry?;
             let path = entry.path();
-            println!("Scan {path:?}");
 
             // Only process markdown files in the root directory
             if path.is_file() && get_extension(&path) == "md" {

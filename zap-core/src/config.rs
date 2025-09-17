@@ -40,9 +40,7 @@ pub struct Config {
 impl Config {
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
         let data = std::fs::read_to_string(path)?;
-        println!("{data:?}");
         let config: Config = toml::from_str(&data)?;
-        println!("{config:?}");
 
         Ok(config)
     }
