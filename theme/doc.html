@@ -28,7 +28,9 @@
             <h3 class="sidebar-title">On this page</h3>
             <nav class="space-y-1">
                 <div class="text-sm text-muted-foreground">
-                    <p>Table of contents will be auto-generated from headings</p>
+                    {% for l in on_this_page %}
+                    <a href="{{l.link}}" class="sidebar-link">{{l.text}}</a>
+                    {% endfor %}
                 </div>
             </nav>
         </div>

@@ -36,6 +36,7 @@ impl Page {
         match self.page_type {
             PageType::Home => "home.html",
             PageType::Changelog => "changelog.html",
+            PageType::Doc => "doc.html",
             _ => "page.html",
         }
     }
@@ -75,6 +76,7 @@ pub enum PageType {
     Home,
     Changelog,
     Index,
+    Doc,
     Regular,
     Unknown,
 }

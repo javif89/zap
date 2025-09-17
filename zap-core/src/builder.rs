@@ -1,11 +1,12 @@
-use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 use serde::Serialize;
 use serde_json;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
-use crate::config::{SiteConfig, HomeConfig};
-use crate::site::{Page, Collection};
+use crate::config::{HomeConfig, SiteConfig};
+use crate::site::{Collection, Page};
 use crate::template::TemplateRenderer;
+use crate::{PageElement, PageType};
 
 #[derive(Debug)]
 pub enum BuildError {
@@ -166,11 +167,11 @@ impl SiteBuilder {
     // Build the site
     pub fn build(self) -> Result<Site, BuildError> {
         let source_dir = self.source_dir.ok_or(BuildError::MissingSourceDir)?;
-        
+
         // Build template renderer with context
         let theme_glob = format!("{}/**/*.html", self.theme_dir.display());
         let mut renderer = TemplateRenderer::new(&theme_glob)?;
-        
+
         // Add structured context to templates
         renderer.add_to_context("site", &self.context.site);
         if let Some(home) = &self.context.home {
@@ -178,12 +179,12 @@ impl SiteBuilder {
         }
         renderer.add_to_context("navigation", &self.context.navigation);
         renderer.add_to_context("secondary_nav", &self.context.navigation); // Backward compat
-        
+
         // Add all custom context
         for (key, value) in &self.context.custom {
             renderer.get_context_mut().insert(key, value);
         }
-        
+
         Ok(Site {
             pages: self.pages,
             collections: self.collections,
@@ -247,7 +248,8 @@ impl Site {
 
     fn page_out_path(&self, page: &Page) -> PathBuf {
         // Convert absolute path to relative path for output
-        let relative_path = page.path
+        let relative_path = page
+            .path
             .strip_prefix(&self.source_dir)
             .unwrap_or(&page.path);
 
@@ -272,20 +274,23 @@ impl Site {
     pub fn render_all(&mut self) -> Result<(), RenderError> {
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
-        
+
         // Render all pages
         for page in &self.pages {
             let out_path = self.page_out_path(page);
-            
+
             let content = self.render_page(page);
             self.renderer.add_to_context("page_content", &content);
-            
+
             let output_path = self.output_dir.join(out_path);
-            if let Err(e) = self.renderer.render_to_file(page.template_name(), &output_path) {
+            if let Err(e) = self
+                .renderer
+                .render_to_file(page.template_name(), &output_path)
+            {
                 eprintln!("Failed to render {}: {:?}", page.title, e);
             }
         }
-        
+
         // Render all collections
         for collection in &self.collections {
             // Build collection navigation
@@ -296,21 +301,37 @@ impl Site {
                     link: format!("/{}", self.page_url(page)),
                 });
             }
-            
+
             for page in &collection.pages {
                 let out_path = self.page_out_path(page);
-                
+
                 let content = self.render_page(page);
                 self.renderer.add_to_context("page_content", &content);
-                self.renderer.add_to_context("collection_pages", &page_links);
-                
+                self.renderer
+                    .add_to_context("collection_pages", &page_links);
+
+                // Get page headings for side nav
+                let headings: Vec<NavItem> = page
+                    .elements()
+                    .iter()
+                    .filter_map(|el| match el {
+                        PageElement::Heading { content, .. } => Some(NavItem {
+                            text: crate::markdown::render_inline_elements_text(&content),
+                            link: "#fakefornow".into(),
+                        }),
+                        _ => None,
+                    })
+                    .collect();
+
+                self.renderer.add_to_context("on_this_page", &headings);
+
                 let output_path = self.output_dir.join(out_path);
                 if let Err(e) = self.renderer.render_to_file("doc.html", &output_path) {
                     eprintln!("Failed to render {}: {:?}", page.title, e);
                 }
             }
         }
-        
+
         Ok(())
     }
 }
