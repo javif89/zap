@@ -275,6 +275,17 @@ impl Site {
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
 
+        let has_changelog = &self
+            .pages
+            .iter()
+            .find(|p| matches!(p.page_type, PageType::Changelog))
+            .is_some();
+
+        println!("Has changelog? {has_changelog:?}");
+
+        self.renderer
+            .add_to_context("has_changelog", &has_changelog);
+
         // Render all pages
         for page in &self.pages {
             let out_path = self.page_out_path(page);
@@ -315,10 +326,17 @@ impl Site {
                     .elements()
                     .iter()
                     .filter_map(|el| match el {
-                        PageElement::Heading { content, .. } => Some(NavItem {
-                            text: crate::markdown::render_inline_elements_text(&content),
-                            link: "#fakefornow".into(),
-                        }),
+                        // We're preferring convention here. The only H1 should
+                        // be the page title.
+                        PageElement::Heading { level: 1, .. } => None,
+                        PageElement::Heading { content, .. } => {
+                            let text = crate::markdown::render_inline_elements_text(&content);
+                            let slug = crate::markdown::slugify(&text);
+                            Some(NavItem {
+                                text,
+                                link: format!("#{}", slug),
+                            })
+                        }
                         _ => None,
                     })
                     .collect();

@@ -2,3 +2,4 @@ target
 out
 theme/node_modules
 *.png
+site

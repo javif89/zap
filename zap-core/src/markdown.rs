@@ -398,7 +398,10 @@ pub fn render_elements_to_html(elements: &[PageElement]) -> String {
 fn render_element(element: &PageElement) -> String {
     match element {
         PageElement::Heading { level, content } => {
-            format!("<h{0}>{1}</h{0}>\n", level, render_inline_elements(content))
+            let text = render_inline_elements_text(content);
+            let slug = slugify(&text);
+            let rendered_content = render_inline_elements(content);
+            format!("<h{0} id=\"{1}\">{2}</h{0}>\n", level, slug, rendered_content)
         }
         PageElement::Paragraph { content } => {
             format!("<p>{}</p>\n", render_inline_elements(content))
@@ -465,6 +468,26 @@ pub fn render_inline_elements_text(elements: &[InlineElement]) -> String {
     }
     
     text
+}
+
+pub fn slugify(text: &str) -> String {
+    text.to_lowercase()
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() {
+                c
+            } else if c.is_whitespace() || c == '-' || c == '_' {
+                '-'
+            } else {
+                ' ' // Will be filtered out
+            }
+        })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join("-")
+        .trim_matches('-')
+        .to_string()
 }
 
 fn render_inline_elements(elements: &[InlineElement]) -> String {

@@ -8,7 +8,7 @@ pub mod scanner;
 // Re-export main types
 pub use markdown::{
     parse_page, PageElement, InlineElement, ListItem,
-    get_page_structured, render_elements_to_html, render_inline_elements_text
+    get_page_structured, render_elements_to_html, render_inline_elements_text, slugify
 };
 pub use site::{Page, PageType, Collection, Zap};
 pub use template::{TemplateRenderer, TemplateError};

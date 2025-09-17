@@ -1,5 +1,27 @@
 use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner, config::Config};
 
+trait FluentString {
+    fn title(&self) -> String;
+}
+
+impl<T: AsRef<str>> FluentString for T {
+    fn title(&self) -> String {
+        self.as_ref()
+            .split_whitespace()
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    Some(first) => {
+                        first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase()
+                    }
+                    None => String::new(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Read configuration
     let config = Config::read("./zap.toml").unwrap_or_default();
@@ -10,19 +32,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // PROCESS - Build navigation from discovered content
     let source_dir = std::path::Path::new("./site");
-    let mut navigation = Vec::new();
-    for page in &pages {
-        navigation.push(NavItem {
-            text: page.title.clone(),
-            link: page.url(source_dir),
-        });
-    }
-    for collection in &collections {
-        navigation.push(NavItem {
-            text: collection.name.clone(),
-            link: format!("/{}", collection.url()),
-        });
-    }
+    let mut navigation: Vec<NavItem> = pages
+        .iter()
+        .filter_map(|p| match p.page_type {
+            PageType::Home => None,
+            PageType::Changelog => None,
+            _ => Some(NavItem {
+                text: p.title.clone(),
+                link: p.url(source_dir),
+            }),
+        })
+        .collect();
+
+    let collection_links: Vec<NavItem> = collections
+        .iter()
+        .map(|c| NavItem {
+            text: c.name.clone().title(),
+            link: format!("/{}", c.url()),
+        })
+        .collect();
+
+    navigation.extend(collection_links);
 
     let home_config = config.home.unwrap_or_default();
     let mut site_config = config.site.unwrap_or_default();
