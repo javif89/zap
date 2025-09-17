@@ -133,9 +133,9 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
 
     let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
 
-    println!("🚀 Serving site at http://{}", addr);
-    println!("📁 Serving files from: {}", output_dir.display());
-    println!("👀 Watching for changes in: {}", source_dir.display());
+    println!("Serving site at http://{}", addr);
+    println!("Serving files from: {}", output_dir.display());
+    println!("Watching for changes in: {}", source_dir.display());
 
     if open_browser {
         if let Err(e) = open::that(format!("http://{}", addr)) {
@@ -213,10 +213,10 @@ async fn start_file_watcher(state: AppState) -> Result<()> {
             .watch(&state.config_file, notify::RecursiveMode::NonRecursive)?;
     }
 
-    println!("📂 File watcher started");
+    println!("File watcher started");
 
     while let Some(path) = rx.recv().await {
-        println!("📝 File changed: {}", path.display());
+        println!("File changed: {}", path.display());
 
         // Rebuild site with livereload
         match build_site_with_livereload(
@@ -227,12 +227,12 @@ async fn start_file_watcher(state: AppState) -> Result<()> {
             Some(&state.livereload_host),
         ) {
             Ok(_) => {
-                println!("✅ Site rebuilt successfully");
+                println!("Site rebuilt successfully");
                 // Send reload message to all connected clients
                 let _ = state.reload_tx.send("reload".to_string());
             }
             Err(e) => {
-                eprintln!("❌ Build error: {}", e);
+                eprintln!("Build error: {}", e);
             }
         }
     }
