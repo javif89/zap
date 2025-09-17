@@ -10,6 +10,24 @@ pub struct Page {
 }
 
 impl Page {
+    pub fn url(&self, source_dir: &Path) -> String {
+        // Convert absolute path to relative path for URL
+        let relative_path = self.path.strip_prefix(source_dir).unwrap_or(&self.path);
+
+        match &self.page_type {
+            PageType::Home => "/".to_string(),
+            PageType::Changelog => "/changelog/".to_string(),
+            PageType::Index => {
+                let dir_path = relative_path.with_file_name("").with_extension("");
+                format!("/{}/", dir_path.to_string_lossy())
+            }
+            _ => {
+                let url_path = relative_path.with_extension("");
+                format!("/{}/", url_path.to_string_lossy())
+            }
+        }
+    }
+
     pub fn elements(&self) -> Vec<PageElement> {
         println!("My path is: {}", &self.path.display());
         get_page_structured(&self.path)
@@ -36,6 +54,13 @@ impl Page {
                 _ => None,
             })
     }
+
+    // pub fn get_first(&self, element: PageElement) -> Option<PageElement> {
+    //     &self.elements().into_iter().find_map(|el| match el {
+    //         element => Some(el.to_owned()),
+    //         _ => None,
+    //     })
+    // }
 
     pub fn get_first_paragraph(&self, source_dir: &Path) -> Option<String> {
         self.get_structured_elements(source_dir)

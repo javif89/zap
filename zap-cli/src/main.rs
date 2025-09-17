@@ -24,11 +24,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // PROCESS - Build navigation from discovered content
+    let source_dir = std::path::Path::new("./site");
     let mut navigation = Vec::new();
     for page in &pages {
         navigation.push(NavItem {
             text: page.title.clone(),
-            link: format!("/{}", page.url()),
+            link: page.url(source_dir),
         });
     }
     for collection in &collections {
@@ -51,6 +52,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 PageElement::Heading { level: 1, text } => Some(text),
                 _ => None,
             });
+
+        println!("Found home");
+        println!("{h:?}");
 
         if h.is_some() {
             site_config.title = Some(h.unwrap());
