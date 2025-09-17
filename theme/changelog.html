@@ -1,18 +1,29 @@
 {% extends "layouts/base.html" %}
 {% block body %}
-<main class="container mx-auto px-4 py-8">
-    <div class="container-narrow">
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold mb-4">{{ site.title | default(value="Zap") }} Changelog</h1>
-            <p class="text-lg text-muted-foreground">Keep track of all the latest updates and improvements</p>
-        </header>
-        <h2 class="font-bold mb-8">Releases</h2>
-        {% for r in releases %}
-        <p class="text-lg mb-4 font-bold">{{r.text}}</p>
-        {% endfor %}
-        <article class="prose prose-lg mx-auto dark:prose-invert">
-            {{ page_content | safe }}
-        </article>
-    </div>
+<main class="flex min-h-screen">
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 shrink-0 hidden lg:block bg-sidebar border-r">
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Releases</h3>
+            <nav class="space-y-1">
+                {% for r in releases %}
+                <a href="{{r.link}}" class="sidebar-link">{{r.text}}</a>
+                {% endfor %}
+            </nav>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0">
+        <div class="container-narrow px-6 py-8">
+            <header class="text-center mb-12">
+                <h1 class="text-4xl font-bold mb-4">{{ site.title | default(value="Zap") }} Changelog</h1>
+                <p class="text-lg text-muted-foreground">Keep track of all the latest updates and improvements</p>
+            </header>
+            <article class="prose prose-lg prose-zinc dark:prose-invert">
+                {{ page_content | safe }}
+            </article>
+        </div>
+    </main>
 </main>
 {% endblock body %}

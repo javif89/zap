@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use crate::config::{HomeConfig, SiteConfig};
+use crate::renderer::{RenderContext, Renderer};
 use crate::site::{Collection, Page};
-use crate::renderer::{Renderer, RenderContext};
 use crate::template::TemplateError;
 use crate::{PageElement, PageType};
 
@@ -171,17 +171,19 @@ impl SiteBuilder {
 
         // Create renderer with global context
         let mut renderer = Renderer::new(&self.theme_dir)?;
-        
+
         // Set global context once
         renderer.set_global_context("site", &self.context.site);
         renderer.set_global_context("navigation", &self.context.navigation);
         renderer.set_global_context("secondary_nav", &self.context.navigation); // Backward compat
-        
+
         // Check for changelog and add to global
-        let has_changelog = self.pages.iter()
+        let has_changelog = self
+            .pages
+            .iter()
             .any(|p| matches!(p.page_type, PageType::Changelog));
         renderer.set_global_context("has_changelog", &has_changelog);
-        
+
         // Add any custom global context
         for (key, value) in &self.context.custom {
             renderer.set_global_context(key, value);
@@ -277,15 +279,15 @@ impl Site {
 
     fn render_home(&self, page: &Page, home_config: &HomeConfig) -> Result<(), RenderError> {
         let mut context = RenderContext::new();
-        
+
         // Get page elements and potentially filter them
         let mut elements = page.elements();
-        
+
         // If hero is enabled, remove first h1 and first paragraph
         if home_config.hero {
             let mut found_h1 = false;
             let mut found_paragraph_after_h1 = false;
-            
+
             elements.retain(|element| {
                 match element {
                     PageElement::Heading { level: 1, .. } if !found_h1 => {
@@ -296,33 +298,33 @@ impl Site {
                         found_paragraph_after_h1 = true;
                         false // Remove first paragraph after h1
                     }
-                    _ => true // Keep everything else
+                    _ => true, // Keep everything else
                 }
             });
         }
-        
+
         // Render the filtered content
         let content = crate::markdown::render_elements_to_html(&elements);
         context.add_to_context("page_content", &content);
-        
+
         // Home-specific config
         context.add_to_context("home", home_config);
-        
+
         let html = self.renderer.render(page.template_name(), &context)?;
-        
+
         let out_path = self.page_out_path(page);
         let output_path = self.output_dir.join(out_path);
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(output_path, html)?;
-        
+
         Ok(())
     }
 
     fn render_changelog(&self, page: &Page) -> Result<(), RenderError> {
         let mut context = RenderContext::new();
-        
+
         // Only page-specific content
         let content = self.render_page(page);
         context.add_to_context("page_content", &content);
@@ -348,35 +350,38 @@ impl Site {
         context.add_to_context("releases", &releases);
 
         let html = self.renderer.render(page.template_name(), &context)?;
-        
+
         let output_path = self.output_dir.join("changelog/index.html");
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(output_path, html)?;
-        
+
         Ok(())
     }
 
     fn render_regular_page(&self, page: &Page) -> Result<(), RenderError> {
         let mut context = RenderContext::new();
-        
+
         let content = self.render_page(page);
         context.add_to_context("page_content", &content);
-        
+
         let html = self.renderer.render(page.template_name(), &context)?;
-        
+
         let out_path = self.page_out_path(page);
         let output_path = self.output_dir.join(out_path);
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(output_path, html)?;
-        
+
         Ok(())
     }
 
     pub fn render_all(&self) -> Result<(), RenderError> {
+        // TODO: Should probably be a bit more sophisticated than this
+        // Delete output dir if it exists
+        let _ = std::fs::remove_dir_all(&self.output_dir);
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
 
@@ -389,7 +394,7 @@ impl Site {
                     } else {
                         self.render_regular_page(page)?;
                     }
-                },
+                }
                 PageType::Changelog => self.render_changelog(page)?,
                 _ => self.render_regular_page(page)?,
             }
@@ -398,7 +403,9 @@ impl Site {
         // Render all collections
         for collection in &self.collections {
             // Build collection navigation
-            let page_links: Vec<NavItem> = collection.pages.iter()
+            let page_links: Vec<NavItem> = collection
+                .pages
+                .iter()
                 .map(|page| NavItem {
                     text: page.title.clone(),
                     link: format!("/{}", self.page_url(page)),
@@ -407,7 +414,7 @@ impl Site {
 
             for page in &collection.pages {
                 let mut context = RenderContext::new();
-                
+
                 // Only page-specific data
                 let content = self.render_page(page);
                 context.add_to_context("page_content", &content);
@@ -435,7 +442,7 @@ impl Site {
                 context.add_to_context("on_this_page", &headings);
 
                 let html = self.renderer.render("doc.html", &context)?;
-                
+
                 let out_path = self.page_out_path(page);
                 let output_path = self.output_dir.join(out_path);
                 if let Some(parent) = output_path.parent() {
