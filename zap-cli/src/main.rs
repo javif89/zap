@@ -28,6 +28,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut site_config = config.site.unwrap_or_default();
     let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
 
+    if let Some(h) = home_page {
+        println!("Home elements");
+        for el in h.elements() {
+            println!("{el:?}");
+        }
+    }
+
     // Build config by filling in as much as we can from README.md
     // before going to defaults
     site_config.title = home_page

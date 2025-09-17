@@ -40,6 +40,13 @@ impl Page {
         }
     }
 
+    // pub fn get_element<T, F>(&self) -> Option<T>
+    // where
+    //     T: PageElement,
+    //     F: Fn(&PageElement) -> bool,
+    // {
+    // }
+
     pub fn get_first_heading(&self) -> Option<String> {
         self.elements()
             .into_iter()
