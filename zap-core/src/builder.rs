@@ -272,7 +272,7 @@ impl Site {
         for page in &self.pages {
             let out_path = self.page_out_path(page);
             
-            let content = crate::renderer::render_page(&self.source_dir, page);
+            let content = crate::renderer::render_page(page);
             self.renderer.add_to_context("page_content", &content);
             
             let output_path = self.output_dir.join(out_path);
@@ -295,7 +295,7 @@ impl Site {
             for page in &collection.pages {
                 let out_path = self.page_out_path(page);
                 
-                let content = crate::renderer::render_page(&self.source_dir, page);
+                let content = crate::renderer::render_page(page);
                 self.renderer.add_to_context("page_content", &content);
                 self.renderer.add_to_context("collection_pages", &page_links);
                 

@@ -175,7 +175,7 @@ impl Zap {
     }
 
     pub fn render_page(&self, page: &Page) -> String {
-        crate::renderer::render_page(&self.scan_path, page)
+        crate::renderer::render_page(page)
     }
 }
 
