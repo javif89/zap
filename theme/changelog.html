@@ -6,6 +6,10 @@
             <h1 class="text-4xl font-bold mb-4">{{ site.title | default(value="Zap") }} Changelog</h1>
             <p class="text-lg text-muted-foreground">Keep track of all the latest updates and improvements</p>
         </header>
+        <h2 class="font-bold mb-8">Releases</h2>
+        {% for r in releases %}
+        <p class="text-lg mb-4 font-bold">{{r.text}}</p>
+        {% endfor %}
         <article class="prose prose-lg mx-auto dark:prose-invert">
             {{ page_content | safe }}
         </article>

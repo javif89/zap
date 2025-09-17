@@ -271,6 +271,39 @@ impl Site {
             .to_string()
     }
 
+    fn render_changelog(&mut self, page: &Page) {
+        let content = self.render_page(page);
+        self.renderer.add_to_context("page_content", &content);
+
+        let releases: Vec<NavItem> = page
+            .elements()
+            .iter()
+            .filter_map(|el| match el {
+                // We're preferring convention here. The only H1 should
+                // be the page title.
+                PageElement::Heading { level: 1, .. } => None,
+                PageElement::Heading { level: 2, content } => {
+                    let text = crate::markdown::render_inline_elements_text(&content);
+                    let slug = crate::markdown::slugify(&text);
+                    Some(NavItem {
+                        text,
+                        link: format!("#{}", slug),
+                    })
+                }
+                _ => None,
+            })
+            .collect();
+        self.renderer.add_to_context("releases", &releases);
+
+        let output_path = self.output_dir.join("changelog/index.html");
+        if let Err(e) = self
+            .renderer
+            .render_to_file(page.template_name(), &output_path)
+        {
+            eprintln!("Failed to render {}: {:?}", page.title, e);
+        }
+    }
+
     pub fn render_all(&mut self) -> Result<(), RenderError> {
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
@@ -287,18 +320,26 @@ impl Site {
             .add_to_context("has_changelog", &has_changelog);
 
         // Render all pages
-        for page in &self.pages {
-            let out_path = self.page_out_path(page);
+        // TODO: match page_type to custom render changelog and home
+        // aka removing heading or generating releases sidebar
+        let pages: Vec<Page> = self.pages.iter().map(|p| p.to_owned()).collect();
+        for page in pages {
+            match page.page_type {
+                PageType::Changelog => self.render_changelog(&page),
+                _ => {
+                    let out_path = self.page_out_path(&page);
 
-            let content = self.render_page(page);
-            self.renderer.add_to_context("page_content", &content);
+                    let content = self.render_page(&page);
+                    self.renderer.add_to_context("page_content", &content);
 
-            let output_path = self.output_dir.join(out_path);
-            if let Err(e) = self
-                .renderer
-                .render_to_file(page.template_name(), &output_path)
-            {
-                eprintln!("Failed to render {}: {:?}", page.title, e);
+                    let output_path = self.output_dir.join(out_path);
+                    if let Err(e) = self
+                        .renderer
+                        .render_to_file(page.template_name(), &output_path)
+                    {
+                        eprintln!("Failed to render {}: {:?}", page.title, e);
+                    }
+                }
             }
         }
 
