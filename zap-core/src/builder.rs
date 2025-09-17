@@ -5,7 +5,8 @@ use std::path::{Path, PathBuf};
 
 use crate::config::{HomeConfig, SiteConfig};
 use crate::site::{Collection, Page};
-use crate::template::TemplateRenderer;
+use crate::renderer::{Renderer, RenderContext};
+use crate::template::TemplateError;
 use crate::{PageElement, PageType};
 
 #[derive(Debug)]
@@ -17,8 +18,8 @@ pub enum BuildError {
     SerializationError(serde_json::Error),
 }
 
-impl From<crate::template::TemplateError> for BuildError {
-    fn from(err: crate::template::TemplateError) -> Self {
+impl From<TemplateError> for BuildError {
+    fn from(err: TemplateError) -> Self {
         BuildError::TemplateError(err)
     }
 }
@@ -168,21 +169,25 @@ impl SiteBuilder {
     pub fn build(self) -> Result<Site, BuildError> {
         let source_dir = self.source_dir.ok_or(BuildError::MissingSourceDir)?;
 
-        // Build template renderer with context
-        let theme_glob = format!("{}/**/*.html", self.theme_dir.display());
-        let mut renderer = TemplateRenderer::new(&theme_glob)?;
-
-        // Add structured context to templates
-        renderer.add_to_context("site", &self.context.site);
+        // Create renderer with global context
+        let mut renderer = Renderer::new(&self.theme_dir)?;
+        
+        // Set global context once
+        renderer.set_global_context("site", &self.context.site);
+        renderer.set_global_context("navigation", &self.context.navigation);
+        renderer.set_global_context("secondary_nav", &self.context.navigation); // Backward compat
         if let Some(home) = &self.context.home {
-            renderer.add_to_context("home", home);
+            renderer.set_global_context("home", home);
         }
-        renderer.add_to_context("navigation", &self.context.navigation);
-        renderer.add_to_context("secondary_nav", &self.context.navigation); // Backward compat
-
-        // Add all custom context
+        
+        // Check for changelog and add to global
+        let has_changelog = self.pages.iter()
+            .any(|p| matches!(p.page_type, PageType::Changelog));
+        renderer.set_global_context("has_changelog", &has_changelog);
+        
+        // Add any custom global context
         for (key, value) in &self.context.custom {
-            renderer.get_context_mut().insert(key, value);
+            renderer.set_global_context(key, value);
         }
 
         Ok(Site {
@@ -197,12 +202,12 @@ impl SiteBuilder {
 
 #[derive(Debug)]
 pub enum RenderError {
-    TemplateError(crate::template::TemplateError),
+    TemplateError(TemplateError),
     IoError(std::io::Error),
 }
 
-impl From<crate::template::TemplateError> for RenderError {
-    fn from(err: crate::template::TemplateError) -> Self {
+impl From<TemplateError> for RenderError {
+    fn from(err: TemplateError) -> Self {
         RenderError::TemplateError(err)
     }
 }
@@ -227,7 +232,7 @@ impl std::error::Error for RenderError {}
 pub struct Site {
     pages: Vec<Page>,
     collections: Vec<Collection>,
-    renderer: TemplateRenderer,
+    renderer: Renderer,
     output_dir: PathBuf,
     source_dir: PathBuf,
 }
@@ -271,9 +276,12 @@ impl Site {
             .to_string()
     }
 
-    fn render_changelog(&mut self, page: &Page) {
+    fn render_changelog(&self, page: &Page) -> Result<(), RenderError> {
+        let mut context = RenderContext::new();
+        
+        // Only page-specific content
         let content = self.render_page(page);
-        self.renderer.add_to_context("page_content", &content);
+        context.add_to_context("page_content", &content);
 
         let releases: Vec<NavItem> = page
             .elements()
@@ -293,74 +301,66 @@ impl Site {
                 _ => None,
             })
             .collect();
-        self.renderer.add_to_context("releases", &releases);
+        context.add_to_context("releases", &releases);
 
+        let html = self.renderer.render(page.template_name(), &context)?;
+        
         let output_path = self.output_dir.join("changelog/index.html");
-        if let Err(e) = self
-            .renderer
-            .render_to_file(page.template_name(), &output_path)
-        {
-            eprintln!("Failed to render {}: {:?}", page.title, e);
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
         }
+        std::fs::write(output_path, html)?;
+        
+        Ok(())
     }
 
-    pub fn render_all(&mut self) -> Result<(), RenderError> {
+    fn render_regular_page(&self, page: &Page) -> Result<(), RenderError> {
+        let mut context = RenderContext::new();
+        
+        let content = self.render_page(page);
+        context.add_to_context("page_content", &content);
+        
+        let html = self.renderer.render(page.template_name(), &context)?;
+        
+        let out_path = self.page_out_path(page);
+        let output_path = self.output_dir.join(out_path);
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(output_path, html)?;
+        
+        Ok(())
+    }
+
+    pub fn render_all(&self) -> Result<(), RenderError> {
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
 
-        let has_changelog = &self
-            .pages
-            .iter()
-            .find(|p| matches!(p.page_type, PageType::Changelog))
-            .is_some();
-
-        println!("Has changelog? {has_changelog:?}");
-
-        self.renderer
-            .add_to_context("has_changelog", &has_changelog);
-
         // Render all pages
-        // TODO: match page_type to custom render changelog and home
-        // aka removing heading or generating releases sidebar
-        let pages: Vec<Page> = self.pages.iter().map(|p| p.to_owned()).collect();
-        for page in pages {
+        for page in &self.pages {
             match page.page_type {
-                PageType::Changelog => self.render_changelog(&page),
-                _ => {
-                    let out_path = self.page_out_path(&page);
-
-                    let content = self.render_page(&page);
-                    self.renderer.add_to_context("page_content", &content);
-
-                    let output_path = self.output_dir.join(out_path);
-                    if let Err(e) = self
-                        .renderer
-                        .render_to_file(page.template_name(), &output_path)
-                    {
-                        eprintln!("Failed to render {}: {:?}", page.title, e);
-                    }
-                }
+                PageType::Changelog => self.render_changelog(page)?,
+                _ => self.render_regular_page(page)?,
             }
         }
 
         // Render all collections
         for collection in &self.collections {
             // Build collection navigation
-            let mut page_links: Vec<NavItem> = Vec::new();
-            for page in &collection.pages {
-                page_links.push(NavItem {
+            let page_links: Vec<NavItem> = collection.pages.iter()
+                .map(|page| NavItem {
                     text: page.title.clone(),
                     link: format!("/{}", self.page_url(page)),
-                });
-            }
+                })
+                .collect();
 
             for page in &collection.pages {
-                let out_path = self.page_out_path(page);
-
+                let mut context = RenderContext::new();
+                
+                // Only page-specific data
                 let content = self.render_page(page);
-                self.renderer.add_to_context("page_content", &content);
-                self.renderer
-                    .add_to_context("collection_pages", &page_links);
+                context.add_to_context("page_content", &content);
+                context.add_to_context("collection_pages", &page_links);
 
                 // Get page headings for side nav
                 let headings: Vec<NavItem> = page
@@ -381,13 +381,16 @@ impl Site {
                         _ => None,
                     })
                     .collect();
+                context.add_to_context("on_this_page", &headings);
 
-                self.renderer.add_to_context("on_this_page", &headings);
-
+                let html = self.renderer.render("doc.html", &context)?;
+                
+                let out_path = self.page_out_path(page);
                 let output_path = self.output_dir.join(out_path);
-                if let Err(e) = self.renderer.render_to_file("doc.html", &output_path) {
-                    eprintln!("Failed to render {}: {:?}", page.title, e);
+                if let Some(parent) = output_path.parent() {
+                    std::fs::create_dir_all(parent)?;
                 }
+                std::fs::write(output_path, html)?;
             }
         }
 

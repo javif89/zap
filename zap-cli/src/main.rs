@@ -87,7 +87,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // RENDER - Generate output
-    let mut site = builder.build()?;
+    let site = builder.build()?;
     site.render_all()?;
 
     Ok(())

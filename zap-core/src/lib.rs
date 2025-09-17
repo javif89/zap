@@ -1,16 +1,18 @@
+pub mod builder;
 pub mod config;
 pub mod markdown;
+pub mod renderer;
+pub mod scanner;
 pub mod site;
 pub mod template;
-pub mod builder;
-pub mod scanner;
 
 // Re-export main types
+pub use builder::{BuildError, NavItem, RenderError, Site, SiteBuilder};
 pub use markdown::{
-    parse_page, PageElement, InlineElement, ListItem,
-    get_page_structured, render_elements_to_html, render_inline_elements_text, slugify
+    InlineElement, ListItem, PageElement, get_page_structured, parse_page, render_elements_to_html,
+    render_inline_elements_text, slugify,
 };
-pub use site::{Page, PageType, Collection, Zap};
-pub use template::{TemplateRenderer, TemplateError};
-pub use builder::{SiteBuilder, Site, NavItem, BuildError, RenderError};
-pub use scanner::{SiteScanner, ScanError};
+pub use renderer::{Renderer, RenderContext};
+pub use scanner::{ScanError, SiteScanner};
+pub use site::{Collection, Page, PageType, Zap};
+pub use template::{TemplateError, TemplateRenderer};

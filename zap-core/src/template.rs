@@ -71,4 +71,22 @@ impl TemplateRenderer {
         std::fs::write(output_path, rendered)?;
         Ok(())
     }
+    
+    /// Render a template with an external context (for new renderer)
+    pub fn render_with_context(&self, template: &str, context: &Context) -> Result<String, TemplateError> {
+        Ok(self.tera.render(template, context)?)
+    }
+    
+    /// Render a template with an external context and write to file
+    pub fn render_to_file_with_context(&self, template: &str, context: &Context, output_path: &Path) -> Result<(), TemplateError> {
+        let rendered = self.tera.render(template, context)?;
+        
+        // Ensure parent directory exists
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        
+        std::fs::write(output_path, rendered)?;
+        Ok(())
+    }
 }
