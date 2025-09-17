@@ -176,9 +176,6 @@ impl SiteBuilder {
         renderer.set_global_context("site", &self.context.site);
         renderer.set_global_context("navigation", &self.context.navigation);
         renderer.set_global_context("secondary_nav", &self.context.navigation); // Backward compat
-        if let Some(home) = &self.context.home {
-            renderer.set_global_context("home", home);
-        }
         
         // Check for changelog and add to global
         let has_changelog = self.pages.iter()
@@ -196,6 +193,7 @@ impl SiteBuilder {
             renderer,
             output_dir: self.output_dir,
             source_dir,
+            home_config: self.context.home,
         })
     }
 }
@@ -235,6 +233,7 @@ pub struct Site {
     renderer: Renderer,
     output_dir: PathBuf,
     source_dir: PathBuf,
+    home_config: Option<HomeConfig>,
 }
 
 impl Site {
@@ -274,6 +273,28 @@ impl Site {
             .with_file_name("")
             .to_string_lossy()
             .to_string()
+    }
+
+    fn render_home(&self, page: &Page, home_config: &HomeConfig) -> Result<(), RenderError> {
+        let mut context = RenderContext::new();
+        
+        // Page content
+        let content = self.render_page(page);
+        context.add_to_context("page_content", &content);
+        
+        // Home-specific config
+        context.add_to_context("home", home_config);
+        
+        let html = self.renderer.render(page.template_name(), &context)?;
+        
+        let out_path = self.page_out_path(page);
+        let output_path = self.output_dir.join(out_path);
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(output_path, html)?;
+        
+        Ok(())
     }
 
     fn render_changelog(&self, page: &Page) -> Result<(), RenderError> {
@@ -339,6 +360,13 @@ impl Site {
         // Render all pages
         for page in &self.pages {
             match page.page_type {
+                PageType::Home => {
+                    if let Some(ref home_config) = self.home_config {
+                        self.render_home(page, home_config)?;
+                    } else {
+                        self.render_regular_page(page)?;
+                    }
+                },
                 PageType::Changelog => self.render_changelog(page)?,
                 _ => self.render_regular_page(page)?,
             }
