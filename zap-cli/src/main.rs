@@ -1,4 +1,4 @@
-use zap_core::{NavItem, PageElement, PageType, SiteBuilder, SiteScanner, config::Config};
+use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner, config::Config};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Read configuration
@@ -28,32 +28,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut site_config = config.site.unwrap_or_default();
     let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
 
-    if let Some(h) = home_page {
-        println!("Home elements");
-        for el in h.elements() {
-            println!("{el:?}");
-        }
-    }
-
     // Build config by filling in as much as we can from README.md
     // before going to defaults
-    site_config.title = home_page
-        .and_then(|p| {
-            p.elements().into_iter().find_map(|el| match el {
-                PageElement::Heading { level: 1, text } => Some(text),
-                _ => None,
-            })
-        })
-        .or_else(|| Some("Zap Site".into()));
-
-    site_config.title = home_page
-        .and_then(|home| {
-            home.elements().into_iter().find_map(|el| match el {
-                PageElement::Heading { level: 1, text } => Some(text),
-                _ => None,
-            })
-        })
-        .or_else(|| Some("Zap".to_string())); // Final fallback
+    if site_config.title.is_none() {
+        site_config.title = home_page
+            .and_then(|home| home.get_first_heading())
+            .or_else(|| Some("Zap".to_string())); // Final fallback
+    }
 
     // Could do similar for tagline from first paragraph
     site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());

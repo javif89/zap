@@ -51,7 +51,9 @@ impl Page {
         self.elements()
             .into_iter()
             .find_map(|element| match element {
-                PageElement::Heading { text, .. } => Some(text),
+                PageElement::Heading { content, .. } => {
+                    Some(crate::markdown::render_inline_elements_text(&content))
+                },
                 _ => None,
             })
     }
@@ -60,7 +62,9 @@ impl Page {
         self.elements()
             .into_iter()
             .find_map(|element| match element {
-                PageElement::Paragraph { text } => Some(text),
+                PageElement::Paragraph { content } => {
+                    Some(crate::markdown::render_inline_elements_text(&content))
+                },
                 _ => None,
             })
     }
