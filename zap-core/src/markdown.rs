@@ -151,10 +151,21 @@ pub fn get_page_structured(path: &std::path::PathBuf) -> Vec<PageElement> {
     for event in parser {
         match event {
             Event::Start(tag) => {
+                // Debug table events
+                if matches!(tag, Tag::Table(_) | Tag::TableHead | Tag::TableRow | Tag::TableCell) {
+                    eprintln!("DEBUG: Start {:?}", tag);
+                }
                 stack.push(ElementBuilder::from_tag(tag));
             }
-            Event::End(_) => {
+            Event::End(tag_end) => {
                 if let Some(builder) = stack.pop() {
+                    // Debug table events
+                    if matches!(builder.kind, BuilderKind::Table | BuilderKind::TableHead | BuilderKind::TableRow | BuilderKind::TableCell) {
+                        eprintln!("DEBUG: End {:?} with builder kind {:?}", tag_end, builder.kind);
+                        eprintln!("DEBUG: Table data headers: {:?}", builder.table_data.headers.len());
+                        eprintln!("DEBUG: Table data rows: {:?}", builder.table_data.rows.len());
+                        eprintln!("DEBUG: Table data current_row: {:?}", builder.table_data.current_row.len());
+                    }
                     // Special handling for list items
                     if matches!(builder.kind, BuilderKind::ListItem(_)) {
                         // List items should add their content to the parent list
@@ -167,11 +178,18 @@ pub fn get_page_structured(path: &std::path::PathBuf) -> Vec<PageElement> {
                                 });
                             }
                     } else if matches!(builder.kind, BuilderKind::TableCell) {
-                        // Table cells should add their content to the parent table row
-                        if let Some(parent) = stack.last_mut()
-                            && matches!(parent.kind, BuilderKind::TableRow) {
-                                parent.table_data.current_row.push(builder.inline_content);
+                        // Table cells should add their content to the parent table row or table head
+                        if let Some(parent) = stack.last_mut() {
+                            match parent.kind {
+                                BuilderKind::TableRow => {
+                                    parent.table_data.current_row.push(builder.inline_content);
+                                }
+                                BuilderKind::TableHead => {
+                                    parent.table_data.current_row.push(builder.inline_content);
+                                }
+                                _ => {}
                             }
+                        }
                     } else if matches!(builder.kind, BuilderKind::TableRow) {
                         // Table rows should add their cells to the parent table head or table
                         if let Some(parent) = stack.last_mut() {
