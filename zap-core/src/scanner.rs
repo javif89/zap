@@ -95,13 +95,10 @@ impl SiteScanner {
         };
 
         let title = get_page_title(&path);
-        let relative_path = path
-            .strip_prefix(&self.source_dir)
-            .map_err(|_| ScanError::InvalidPath(path.clone()))?;
 
         Ok(Some(Page {
             title,
-            path: relative_path.to_path_buf(),
+            path: path.clone(),
             page_type,
         }))
     }

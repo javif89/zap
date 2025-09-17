@@ -10,29 +10,9 @@ pub struct Page {
 }
 
 impl Page {
-    pub fn url(&self) -> String {
-        self.out_path()
-            .with_file_name("")
-            .to_string_lossy()
-            .to_string()
-    }
-
     pub fn elements(&self) -> Vec<PageElement> {
         println!("My path is: {}", &self.path.display());
         get_page_structured(&self.path)
-    }
-
-    pub fn out_path(&self) -> PathBuf {
-        let out: PathBuf = PathBuf::new();
-
-        match &self.page_type {
-            PageType::Home => out.join("index.html"),
-            PageType::Changelog => out.join("changelog/index.html"),
-            PageType::Index => out
-                .join(&self.path.with_file_name("").with_extension(""))
-                .join("index.html"),
-            _ => out.join(&self.path.with_extension("")).join("index.html"),
-        }
     }
 
     pub fn template_name(&self) -> &'static str {

@@ -240,6 +240,30 @@ impl Site {
         &self.collections
     }
 
+    fn page_out_path(&self, page: &Page) -> PathBuf {
+        // Convert absolute path to relative path for output
+        let relative_path = page.path
+            .strip_prefix(&self.source_dir)
+            .unwrap_or(&page.path);
+
+        match &page.page_type {
+            crate::site::PageType::Home => PathBuf::from("index.html"),
+            crate::site::PageType::Changelog => PathBuf::from("changelog/index.html"),
+            crate::site::PageType::Index => relative_path
+                .with_file_name("")
+                .with_extension("")
+                .join("index.html"),
+            _ => relative_path.with_extension("").join("index.html"),
+        }
+    }
+
+    fn page_url(&self, page: &Page) -> String {
+        self.page_out_path(page)
+            .with_file_name("")
+            .to_string_lossy()
+            .to_string()
+    }
+
     pub fn render_all(&mut self) -> Result<(), RenderError> {
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
@@ -248,12 +272,13 @@ impl Site {
         println!("Pages");
         for page in &self.pages {
             println!("{}: {:?}", page.title, page.page_type);
-            println!("{} -> {}", page.path.display(), page.out_path().display());
+            let out_path = self.page_out_path(page);
+            println!("{} -> {}", page.path.display(), out_path.display());
             
             let content = crate::renderer::render_page(&self.source_dir, page);
             self.renderer.add_to_context("page_content", &content);
             
-            let output_path = self.output_dir.join(page.out_path());
+            let output_path = self.output_dir.join(out_path);
             match self.renderer.render_to_file(page.template_name(), &output_path) {
                 Ok(_) => println!("Rendered successfully"),
                 Err(e) => eprintln!("Failed to render: {:?}", e),
@@ -270,19 +295,20 @@ impl Site {
             for page in &collection.pages {
                 page_links.push(NavItem {
                     text: page.title.clone(),
-                    link: format!("/{}", page.url()),
+                    link: format!("/{}", self.page_url(page)),
                 });
             }
             
             for page in &collection.pages {
                 println!("{}: {:?}", page.title, page.page_type);
-                println!("{} -> {}", page.path.display(), page.out_path().display());
+                let out_path = self.page_out_path(page);
+                println!("{} -> {}", page.path.display(), out_path.display());
                 
                 let content = crate::renderer::render_page(&self.source_dir, page);
                 self.renderer.add_to_context("page_content", &content);
                 self.renderer.add_to_context("collection_pages", &page_links);
                 
-                let output_path = self.output_dir.join(page.out_path());
+                let output_path = self.output_dir.join(out_path);
                 match self.renderer.render_to_file("doc.html", &output_path) {
                     Ok(_) => println!("Rendered successfully"),
                     Err(e) => eprintln!("Render err: {}", e),
