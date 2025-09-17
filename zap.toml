@@ -5,6 +5,7 @@
 # small_tag = "Open Source • Zero Configuration"
 
 [home]
+# hero = false
 # primary_action = { text = "Get Started", link = "/quick-start" }
 # secondary_action = { text = "Documentation", link = "/docs" }
 # features = [

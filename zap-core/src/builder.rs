@@ -278,8 +278,31 @@ impl Site {
     fn render_home(&self, page: &Page, home_config: &HomeConfig) -> Result<(), RenderError> {
         let mut context = RenderContext::new();
         
-        // Page content
-        let content = self.render_page(page);
+        // Get page elements and potentially filter them
+        let mut elements = page.elements();
+        
+        // If hero is enabled, remove first h1 and first paragraph
+        if home_config.hero {
+            let mut found_h1 = false;
+            let mut found_paragraph_after_h1 = false;
+            
+            elements.retain(|element| {
+                match element {
+                    PageElement::Heading { level: 1, .. } if !found_h1 => {
+                        found_h1 = true;
+                        false // Remove first h1
+                    }
+                    PageElement::Paragraph { .. } if found_h1 && !found_paragraph_after_h1 => {
+                        found_paragraph_after_h1 = true;
+                        false // Remove first paragraph after h1
+                    }
+                    _ => true // Keep everything else
+                }
+            });
+        }
+        
+        // Render the filtered content
+        let content = crate::markdown::render_elements_to_html(&elements);
         context.add_to_context("page_content", &content);
         
         // Home-specific config
