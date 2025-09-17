@@ -1,0 +1,41 @@
+# Example zap configuration file showing all available options
+
+[build]
+# Build-related configuration (can be overridden by CLI args or env vars)
+source = "./site"
+output = "./out" 
+theme = "./theme"
+host = "127.0.0.1"
+port = 3000
+open = false
+
+[site]
+# Site metadata configuration
+title = "My Awesome Site"
+tagline = "Built with Zap - Config Override Works!"
+secondary_tagline = "Fast, simple, powerful"
+small_tag = "v1.0"
+
+[home]
+# Homepage configuration
+hero = true
+
+[[home.features]]
+title = "Lightning Fast"
+description = "Blazing fast static site generation"
+
+[[home.features]]
+title = "Zero Configuration"
+description = "Works out of the box with sensible defaults"
+
+[[home.features]]
+title = "Markdown First"
+description = "Write in Markdown, get beautiful websites"
+
+[home.primary_action]
+text = "Get Started"
+link = "/installation"
+
+[home.secondary_action]
+text = "View on GitHub"
+link = "https://github.com/example/project"

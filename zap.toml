@@ -1,15 +1,57 @@
+# [site]
+# # title = "Zap"
+# # tagline = "A modern static site generator that creates beautiful project websites with minimal configuration"
+# # secondary_tagline = "Transform your markdown documentation into stunning websites in seconds. Built with Rust for speed and reliability."
+# # small_tag = "Open Source • Zero Configuration"
+
+# [home]
+# # hero = false
+# # primary_action = { text = "Get Started", link = "/quick-start" }
+# # secondary_action = { text = "Documentation", link = "/docs" }
+# # features = [
+# #     { title = "Lightning fast", description = "Built with Rust for incredible performance. Generate your entire site in milliseconds, not seconds." },
+# #     { title = "Zero Configuration", description = "Just point Zap at your markdown files and get a beautiful website. No complex configuration files needed." },
+# #     { title = "Beautiful Themes", description = "Modern, responsive designs that look great on all devices. Dark mode support included out of the box." },
+# # ]
+
+# Example zap configuration file showing all available options
+
+[build]
+# Build-related configuration (can be overridden by CLI args or env vars)
+source = "./site"
+output = "./out"
+theme = "./theme"
+host = "127.0.0.1"
+port = 3000
+open = false
+
 [site]
-# title = "Zap"
-# tagline = "A modern static site generator that creates beautiful project websites with minimal configuration"
-# secondary_tagline = "Transform your markdown documentation into stunning websites in seconds. Built with Rust for speed and reliability."
-# small_tag = "Open Source • Zero Configuration"
+# Site metadata configuration
+title = "My Awesome Site"
+tagline = "Built with Zap"
+secondary_tagline = "Fast, simple, powerful"
+small_tag = "v1.0"
 
 [home]
-# hero = false
-# primary_action = { text = "Get Started", link = "/quick-start" }
-# secondary_action = { text = "Documentation", link = "/docs" }
-# features = [
-#     { title = "Lightning fast", description = "Built with Rust for incredible performance. Generate your entire site in milliseconds, not seconds." },
-#     { title = "Zero Configuration", description = "Just point Zap at your markdown files and get a beautiful website. No complex configuration files needed." },
-#     { title = "Beautiful Themes", description = "Modern, responsive designs that look great on all devices. Dark mode support included out of the box." },
-# ]
+# Homepage configuration
+hero = true
+
+[[home.features]]
+title = "Lightning Fast"
+description = "Blazing fast static site generation"
+
+[[home.features]]
+title = "Zero Configuration"
+description = "Works out of the box with sensible defaults"
+
+[[home.features]]
+title = "Markdown First"
+description = "Write in Markdown, get beautiful websites"
+
+[home.primary_action]
+text = "Get Started"
+link = "/installation"
+
+[home.secondary_action]
+text = "View on GitHub"
+link = "https://github.com/example/project"

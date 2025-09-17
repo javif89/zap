@@ -1,6 +1,7 @@
 use clap::Command;
 
 mod cmd;
+mod config;
 
 fn create_clap_app() -> Command {
     cmd::build::add_build_args(

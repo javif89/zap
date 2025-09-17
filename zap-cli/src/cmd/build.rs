@@ -1,7 +1,8 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches, Command};
 use std::path::Path;
-use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner, config::Config};
+use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner};
+use crate::config::load_build_config;
 
 pub fn add_build_args(command: Command) -> Command {
     command
@@ -45,13 +46,14 @@ pub fn make_subcommand() -> Command {
 }
 
 pub fn execute(args: &ArgMatches) -> Result<()> {
-    let source_dir = args.get_one::<String>("source").unwrap();
-    let output_dir = args.get_one::<String>("output").unwrap();
-    let theme_dir = args.get_one::<String>("theme").unwrap();
-    let config_file = args.get_one::<String>("config").unwrap();
+    // Load cascading configuration
+    let zap_config = load_build_config(args)?;
+    let build_config = zap_config.build_config();
+    let config = zap_config.site_config();
 
-    // Read configuration
-    let config = Config::read(config_file).unwrap_or_default();
+    let source_dir = &build_config.source;
+    let output_dir = &build_config.output;
+    let theme_dir = &build_config.theme;
 
     // SCAN - Discover content
     let scanner = SiteScanner::new(source_dir);
@@ -81,8 +83,8 @@ pub fn execute(args: &ArgMatches) -> Result<()> {
 
     navigation.extend(collection_links);
 
-    let home_config = config.home.unwrap_or_default();
-    let mut site_config = config.site.unwrap_or_default();
+    let home_config = config.home.clone().unwrap_or_default();
+    let mut site_config = config.site.clone().unwrap_or_default();
     let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
 
     // Build config by filling in as much as we can from README.md
@@ -93,8 +95,10 @@ pub fn execute(args: &ArgMatches) -> Result<()> {
             .or_else(|| Some("Zap".to_string())); // Final fallback
     }
 
-    // Could do similar for tagline from first paragraph
-    site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
+    // Only use README first paragraph as tagline if none is set in config
+    if site_config.tagline.is_none() {
+        site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
+    }
 
     // BUILD - Assemble the site
     let mut builder = SiteBuilder::new()

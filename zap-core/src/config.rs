@@ -31,7 +31,7 @@ impl From<toml::de::Error> for ConfigError {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct Config {
     pub site: Option<SiteConfig>,
     pub home: Option<HomeConfig>,
@@ -46,9 +46,8 @@ impl Config {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(default)]
-#[derive(Default)]
 pub struct SiteConfig {
     pub title: Option<String>,
     pub tagline: Option<String>,
@@ -57,7 +56,7 @@ pub struct SiteConfig {
 }
 
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
 pub struct HomeConfig {
     pub hero: bool,
@@ -78,13 +77,13 @@ impl Default for HomeConfig {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct Link {
     pub text: String,
     pub link: String,
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct Feature {
     pub title: String,
     pub description: String,

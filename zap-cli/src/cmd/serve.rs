@@ -15,7 +15,8 @@ use std::{
 };
 use tokio::sync::broadcast;
 use tower_http::services::ServeDir;
-use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner, config::Config};
+use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner};
+use crate::config::load_serve_config;
 
 pub fn make_subcommand() -> Command {
     Command::new("serve")
@@ -83,16 +84,21 @@ struct AppState {
     theme_dir: PathBuf,
     config_file: PathBuf,
     livereload_host: String,
+    zap_config: crate::config::ZapConfig,
 }
 
 pub async fn execute(args: &ArgMatches) -> Result<()> {
-    let source_dir = PathBuf::from(args.get_one::<String>("source").unwrap());
-    let output_dir = PathBuf::from(args.get_one::<String>("output").unwrap());
-    let theme_dir = PathBuf::from(args.get_one::<String>("theme").unwrap());
-    let config_file = PathBuf::from(args.get_one::<String>("config").unwrap());
-    let port: u16 = args.get_one::<String>("port").unwrap().parse()?;
-    let host = args.get_one::<String>("host").unwrap();
-    let open_browser = args.get_flag("open");
+    // Load cascading configuration
+    let zap_config = load_serve_config(args)?;
+    let build_config = zap_config.build_config();
+
+    let source_dir = PathBuf::from(&build_config.source);
+    let output_dir = PathBuf::from(&build_config.output);
+    let theme_dir = PathBuf::from(&build_config.theme);
+    let config_file = PathBuf::from(&build_config.config);
+    let port = build_config.port;
+    let host = &build_config.host;
+    let open_browser = build_config.open;
 
     // Initial build with livereload
     let livereload_host = format!("{}:{}", host, port);
@@ -102,6 +108,7 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
         &theme_dir,
         &config_file,
         Some(&livereload_host),
+        &zap_config,
     )?;
 
     // Create broadcast channel for live reload
@@ -114,6 +121,7 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
         theme_dir: theme_dir.clone(),
         config_file: config_file.clone(),
         livereload_host: livereload_host.clone(),
+        zap_config: zap_config.clone(),
     };
 
     // Start file watcher
@@ -224,6 +232,7 @@ async fn start_file_watcher(state: AppState) -> Result<()> {
             &state.theme_dir,
             &state.config_file,
             Some(&state.livereload_host),
+            &state.zap_config,
         ) {
             Ok(_) => {
                 println!("Site rebuilt successfully");
@@ -244,8 +253,9 @@ fn build_site(
     output_dir: &Path,
     theme_dir: &Path,
     config_file: &Path,
+    zap_config: &crate::config::ZapConfig,
 ) -> Result<()> {
-    build_site_with_livereload(source_dir, output_dir, theme_dir, config_file, None)
+    build_site_with_livereload(source_dir, output_dir, theme_dir, config_file, None, zap_config)
 }
 
 fn build_site_with_livereload(
@@ -254,9 +264,10 @@ fn build_site_with_livereload(
     theme_dir: &Path,
     config_file: &Path,
     livereload_host: Option<&str>,
+    zap_config: &crate::config::ZapConfig,
 ) -> Result<()> {
-    // This is the same build logic from cmd/build.rs
-    let config = Config::read(config_file).unwrap_or_default();
+    // Use the cascading configuration
+    let config = zap_config.site_config();
 
     let scanner = SiteScanner::new(source_dir);
     let (pages, collections) = scanner.scan()?;
@@ -283,8 +294,8 @@ fn build_site_with_livereload(
 
     navigation.extend(collection_links);
 
-    let home_config = config.home.unwrap_or_default();
-    let mut site_config = config.site.unwrap_or_default();
+    let home_config = config.home.clone().unwrap_or_default();
+    let mut site_config = config.site.clone().unwrap_or_default();
     let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
 
     if site_config.title.is_none() {
@@ -293,7 +304,10 @@ fn build_site_with_livereload(
             .or_else(|| Some("Zap".to_string()));
     }
 
-    site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
+    // Only use README first paragraph as tagline if none is set in config
+    if site_config.tagline.is_none() {
+        site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
+    }
 
     let mut builder = SiteBuilder::new()
         .source_dir(source_dir)
