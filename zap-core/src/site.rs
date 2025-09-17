@@ -141,9 +141,7 @@ impl Zap {
     }
 
     fn scan_page(&self, path: PathBuf) -> Option<Page> {
-        if path.file_name().is_none() {
-            return None;
-        }
+        path.file_name()?;
 
         let page_type = match path
             .file_name()

@@ -52,11 +52,10 @@ impl SiteScanner {
             let path = entry.path();
 
             // Only process markdown files in the root directory
-            if path.is_file() && get_extension(&path) == "md" {
-                if let Some(page) = self.scan_page(path)? {
+            if path.is_file() && get_extension(&path) == "md"
+                && let Some(page) = self.scan_page(path)? {
                     pages.push(page);
                 }
-            }
         }
 
         Ok(pages)

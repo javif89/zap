@@ -48,6 +48,7 @@ impl Config {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(default)]
+#[derive(Default)]
 pub struct SiteConfig {
     pub title: Option<String>,
     pub tagline: Option<String>,
@@ -55,16 +56,6 @@ pub struct SiteConfig {
     pub small_tag: Option<String>,
 }
 
-impl Default for SiteConfig {
-    fn default() -> Self {
-        Self {
-            title: None,
-            tagline: None,
-            secondary_tagline: None,
-            small_tag: None,
-        }
-    }
-}
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(default)]

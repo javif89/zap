@@ -137,11 +137,10 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
     println!("Serving files from: {}", output_dir.display());
     println!("Watching for changes in: {}", source_dir.display());
 
-    if open_browser {
-        if let Err(e) = open::that(format!("http://{}", addr)) {
+    if open_browser
+        && let Err(e) = open::that(format!("http://{}", addr)) {
             eprintln!("Failed to open browser: {}", e);
         }
-    }
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;

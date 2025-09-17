@@ -5,8 +5,8 @@ use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
 
 // Initialize syntax highlighting resources once
-static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(|| SyntaxSet::load_defaults_newlines());
-static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(|| ThemeSet::load_defaults());
+static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
+static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
 
 pub fn parse_page(path: &str) -> Result<String, std::io::Error> {
     let content = std::fs::read_to_string(path)?;
@@ -158,15 +158,41 @@ pub fn get_page_structured(path: &std::path::PathBuf) -> Vec<PageElement> {
                     // Special handling for list items
                     if matches!(builder.kind, BuilderKind::ListItem(_)) {
                         // List items should add their content to the parent list
-                        if let Some(parent) = stack.last_mut() {
-                            if matches!(parent.kind, BuilderKind::List(_)) {
+                        if let Some(parent) = stack.last_mut()
+                            && matches!(parent.kind, BuilderKind::List(_)) {
                                 parent.list_items.push(ListItem {
                                     content: builder.inline_content,
                                     sub_items: Vec::new(),
                                     checked: None,
                                 });
                             }
+                    } else if matches!(builder.kind, BuilderKind::TableCell) {
+                        // Table cells should add their content to the parent table row
+                        if let Some(parent) = stack.last_mut()
+                            && matches!(parent.kind, BuilderKind::TableRow) {
+                                parent.table_data.current_row.push(builder.inline_content);
+                            }
+                    } else if matches!(builder.kind, BuilderKind::TableRow) {
+                        // Table rows should add their cells to the parent table head or table
+                        if let Some(parent) = stack.last_mut() {
+                            match parent.kind {
+                                BuilderKind::TableHead => {
+                                    // Table head rows become headers
+                                    parent.table_data.current_row = builder.table_data.current_row;
+                                }
+                                BuilderKind::Table => {
+                                    // Regular table rows
+                                    parent.table_data.rows.push(builder.table_data.current_row);
+                                }
+                                _ => {}
+                            }
                         }
+                    } else if matches!(builder.kind, BuilderKind::TableHead) {
+                        // Table head should add its headers to the parent table
+                        if let Some(parent) = stack.last_mut()
+                            && matches!(parent.kind, BuilderKind::Table) {
+                                parent.table_data.headers = builder.table_data.current_row;
+                            }
                     } else if matches!(builder.kind, BuilderKind::Emphasis(_) | BuilderKind::Strikethrough | BuilderKind::Link(_, _) | BuilderKind::Image(_, _)) {
                         // Inline elements should be added to the parent's inline content
                         if let Some(parent) = stack.last_mut() {
@@ -372,6 +398,16 @@ impl ElementBuilder {
                 // We return None here, but the List builder should collect the inline content
                 None
             }
+            BuilderKind::Table => {
+                Some(PageElement::Table {
+                    headers: self.table_data.headers,
+                    rows: self.table_data.rows,
+                })
+            }
+            BuilderKind::TableHead | BuilderKind::TableRow | BuilderKind::TableCell => {
+                // These should be handled by their parent table
+                None
+            }
             _ => None,
         }
     }
@@ -432,7 +468,7 @@ fn render_element(element: &PageElement) -> String {
         PageElement::List { items, ordered } => {
             let tag = if *ordered { "ol" } else { "ul" };
             let items_html: String = items.iter()
-                .map(|item| render_list_item(item))
+                .map(render_list_item)
                 .collect();
             format!("<{0}>\n{1}</{0}>\n", tag, items_html)
         }

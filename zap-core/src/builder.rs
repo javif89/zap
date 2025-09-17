@@ -56,22 +56,12 @@ pub struct NavItem {
     pub link: String,
 }
 
+#[derive(Default)]
 pub struct SiteContext {
     pub site: SiteConfig,
     pub home: Option<HomeConfig>,
     pub navigation: Vec<NavItem>,
     pub custom: HashMap<String, serde_json::Value>,
-}
-
-impl Default for SiteContext {
-    fn default() -> Self {
-        Self {
-            site: SiteConfig::default(),
-            home: None,
-            navigation: Vec::new(),
-            custom: HashMap::new(),
-        }
-    }
 }
 
 pub struct SiteBuilder {
@@ -82,6 +72,12 @@ pub struct SiteBuilder {
     pages: Vec<Page>,
     collections: Vec<Collection>,
     context: SiteContext,
+}
+
+impl Default for SiteBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SiteBuilder {
@@ -337,7 +333,7 @@ impl Site {
                 // be the page title.
                 PageElement::Heading { level: 1, .. } => None,
                 PageElement::Heading { level: 2, content } => {
-                    let text = crate::markdown::render_inline_elements_text(&content);
+                    let text = crate::markdown::render_inline_elements_text(content);
                     let slug = crate::markdown::slugify(&text);
                     Some(NavItem {
                         text,
@@ -381,7 +377,7 @@ impl Site {
     pub fn render_all(&self) -> Result<(), RenderError> {
         // TODO: Should probably be a bit more sophisticated than this
         // Delete output dir if it exists
-        let _ = std::fs::remove_dir_all(&self.output_dir);
+        // let _ = std::fs::remove_dir_all(&self.output_dir);
         // Ensure output directory exists
         std::fs::create_dir_all(&self.output_dir)?;
 
@@ -429,7 +425,7 @@ impl Site {
                         // be the page title.
                         PageElement::Heading { level: 1, .. } => None,
                         PageElement::Heading { content, .. } => {
-                            let text = crate::markdown::render_inline_elements_text(&content);
+                            let text = crate::markdown::render_inline_elements_text(content);
                             let slug = crate::markdown::slugify(&text);
                             Some(NavItem {
                                 text,
