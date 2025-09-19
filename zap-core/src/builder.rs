@@ -36,6 +36,15 @@ impl From<serde_json::Error> for BuildError {
     }
 }
 
+impl From<RenderError> for BuildError {
+    fn from(err: RenderError) -> Self {
+        match err {
+            RenderError::TemplateError(te) => BuildError::TemplateError(te),
+            RenderError::IoError(ie) => BuildError::ScanError(ie),
+        }
+    }
+}
+
 impl std::fmt::Display for BuildError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -450,4 +459,86 @@ impl Site {
 
         Ok(())
     }
+}
+
+/// High-level function to build a complete site from configuration
+pub fn build_site(
+    config: &crate::config::Config,
+    source_dir: &std::path::Path,
+    output_dir: &std::path::Path,
+    theme_dir: &std::path::Path,
+) -> Result<(), BuildError> {
+    let scanner = crate::scanner::SiteScanner::new(source_dir);
+    let (pages, collections) = scanner.scan().map_err(|e| BuildError::ScanError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+
+    let mut navigation: Vec<NavItem> = pages
+        .iter()
+        .filter_map(|p| match p.page_type {
+            crate::PageType::Home => None,
+            crate::PageType::Changelog => None,
+            _ => Some(NavItem {
+                text: p.title.clone(),
+                link: p.url(source_dir),
+            }),
+        })
+        .collect();
+
+    let collection_links: Vec<NavItem> = collections
+        .iter()
+        .map(|c| NavItem {
+            text: title_case(&c.name),
+            link: format!("/{}", c.url()),
+        })
+        .collect();
+
+    navigation.extend(collection_links);
+
+    let home_config = config.home.clone().unwrap_or_default();
+    let mut site_config = config.site.clone().unwrap_or_default();
+    let home_page = pages.iter().find(|p| matches!(p.page_type, crate::PageType::Home));
+
+    if site_config.title.is_none() {
+        site_config.title = home_page
+            .and_then(|home| home.get_first_heading())
+            .or_else(|| Some("Zap".to_string()));
+    }
+
+    // Only use README first paragraph as tagline if none is set in config
+    if site_config.tagline.is_none() {
+        site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
+    }
+
+    let mut builder = SiteBuilder::new()
+        .source_dir(source_dir)
+        .output_dir(output_dir)
+        .theme_dir(theme_dir)
+        .site_config(site_config)
+        .home_config(home_config)
+        .navigation(navigation);
+
+    for page in pages {
+        builder = builder.add_page(page);
+    }
+    for collection in collections {
+        builder = builder.add_collection(collection);
+    }
+
+    let site = builder.build()?;
+    site.render_all()?;
+
+    Ok(())
+}
+
+/// Convert snake_case to Title Case
+fn title_case(s: &str) -> String {
+    s.split('_')
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }

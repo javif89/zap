@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches, Command};
 use std::path::Path;
-use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner};
+use zap_core::build_site;
 use crate::config::load_build_config;
 
 pub fn add_build_args(command: Command) -> Command {
@@ -49,94 +49,16 @@ pub fn execute(args: &ArgMatches) -> Result<()> {
     // Load cascading configuration
     let zap_config = load_build_config(args)?;
     let build_config = zap_config.build_config();
-    let config = zap_config.site_config();
 
-    let source_dir = &build_config.source;
-    let output_dir = &build_config.output;
-    let theme_dir = &build_config.theme;
+    let source_dir = Path::new(&build_config.source);
+    let output_dir = Path::new(&build_config.output);
+    let theme_dir = Path::new(&build_config.theme);
 
-    // SCAN - Discover content
-    let scanner = SiteScanner::new(source_dir);
-    let (pages, collections) = scanner.scan()?;
+    // Build site using shared function
+    build_site(&zap_config.site, source_dir, output_dir, theme_dir)?;
 
-    // PROCESS - Build navigation from discovered content
-    let source_path = Path::new(source_dir);
-    let mut navigation: Vec<NavItem> = pages
-        .iter()
-        .filter_map(|p| match p.page_type {
-            PageType::Home => None,
-            PageType::Changelog => None,
-            _ => Some(NavItem {
-                text: p.title.clone(),
-                link: p.url(source_path),
-            }),
-        })
-        .collect();
-
-    let collection_links: Vec<NavItem> = collections
-        .iter()
-        .map(|c| NavItem {
-            text: title_case(&c.name),
-            link: format!("/{}", c.url()),
-        })
-        .collect();
-
-    navigation.extend(collection_links);
-
-    let home_config = config.home.clone().unwrap_or_default();
-    let mut site_config = config.site.clone().unwrap_or_default();
-    let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
-
-    // Build config by filling in as much as we can from README.md
-    // before going to defaults
-    if site_config.title.is_none() {
-        site_config.title = home_page
-            .and_then(|home| home.get_first_heading())
-            .or_else(|| Some("Zap".to_string())); // Final fallback
-    }
-
-    // Only use README first paragraph as tagline if none is set in config
-    if site_config.tagline.is_none() {
-        site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
-    }
-
-    // BUILD - Assemble the site
-    let mut builder = SiteBuilder::new()
-        .source_dir(source_dir)
-        .output_dir(output_dir)
-        .theme_dir(theme_dir)
-        .site_config(site_config)
-        .home_config(home_config)
-        .navigation(navigation);
-
-    // Add discovered content
-    for page in pages {
-        builder = builder.add_page(page);
-    }
-    for collection in collections {
-        builder = builder.add_collection(collection);
-    }
-
-    // RENDER - Generate output
-    let site = builder.build()?;
-    site.render_all()?;
-
-    println!("Site built successfully in {}", output_dir);
+    println!("Site built successfully in {}", output_dir.display());
 
     Ok(())
 }
 
-pub fn title_case(s: &str) -> String {
-    s.split_whitespace()
-        .map(|word| {
-            let mut chars = word.chars();
-            match chars.next() {
-                Some(first) => {
-                    first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase()
-                }
-                None => String::new(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
-}

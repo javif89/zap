@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner};
+use zap_core::build_site;
 use zap_dev_server::{LiveServer, LiveServerConfig};
 use crate::config::load_serve_config;
 
@@ -81,12 +81,11 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
     // Initial build with livereload support
     let livereload_host = format!("{}:{}", build_config.host, build_config.port);
     build_site_with_livereload(
+        &zap_config,
         &source_dir,
         &output_dir,
         &theme_dir,
-        &config_file,
-        Some(&livereload_host),
-        &zap_config,
+        &livereload_host,
     )?;
 
     // Start the live dev server (handles its own file watching of output dir)
@@ -184,12 +183,11 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
 
         // Rebuild site - the dev server will detect output changes and reload
         match build_site_with_livereload(
+            &config,
             &source_dir,
             &output_dir,
             &theme_dir,
-            &config_file,
-            Some(&livereload_host),
-            &config,
+            &livereload_host,
         ) {
             Ok(_) => {
                 println!("Site rebuilt successfully");
@@ -203,82 +201,109 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
     Ok(())
 }
 
-
+/// Build site with livereload support - CLI-specific function
 fn build_site_with_livereload(
+    config: &crate::config::ZapConfig,
     source_dir: &Path,
     output_dir: &Path,
     theme_dir: &Path,
-    config_file: &Path,
-    livereload_host: Option<&str>,
-    zap_config: &crate::config::ZapConfig,
+    livereload_host: &str,
 ) -> Result<()> {
-    // Use the cascading configuration
-    let config = zap_config.site_config();
-
-    let scanner = SiteScanner::new(source_dir);
-    let (pages, collections) = scanner.scan()?;
-
-    let mut navigation: Vec<NavItem> = pages
-        .iter()
-        .filter_map(|p| match p.page_type {
-            PageType::Home => None,
-            PageType::Changelog => None,
-            _ => Some(NavItem {
-                text: p.title.clone(),
-                link: p.url(source_dir),
-            }),
-        })
-        .collect();
-
-    let collection_links: Vec<NavItem> = collections
-        .iter()
-        .map(|c| NavItem {
-            text: crate::cmd::build::title_case(&c.name),
-            link: format!("/{}", c.url()),
-        })
-        .collect();
-
-    navigation.extend(collection_links);
-
-    let home_config = config.home.clone().unwrap_or_default();
-    let mut site_config = config.site.clone().unwrap_or_default();
-    let home_page = pages.iter().find(|p| matches!(p.page_type, PageType::Home));
-
-    if site_config.title.is_none() {
-        site_config.title = home_page
-            .and_then(|home| home.get_first_heading())
-            .or_else(|| Some("Zap".to_string()));
-    }
-
-    // Only use README first paragraph as tagline if none is set in config
-    if site_config.tagline.is_none() {
-        site_config.tagline = home_page.and_then(|home| home.get_first_paragraph());
-    }
-
-    let mut builder = SiteBuilder::new()
-        .source_dir(source_dir)
-        .output_dir(output_dir)
-        .theme_dir(theme_dir)
-        .site_config(site_config)
-        .home_config(home_config)
-        .navigation(navigation);
-
-    // Add livereload context if in development mode
-    if let Some(host) = livereload_host {
-        builder = builder.add_custom("livereload", host)?;
-    }
-
-    for page in pages {
-        builder = builder.add_page(page);
-    }
-    for collection in collections {
-        builder = builder.add_collection(collection);
-    }
-
-    let site = builder.build()?;
-    site.render_all()?;
-
+    // First do the standard build
+    build_site(&config.site, source_dir, output_dir, theme_dir)?;
+    
+    // Then add livereload script to all HTML files
+    inject_livereload_into_html_files(output_dir, livereload_host)?;
+    
     Ok(())
 }
+
+/// Inject livereload script into all HTML files in the output directory
+fn inject_livereload_into_html_files(output_dir: &Path, livereload_host: &str) -> Result<()> {
+    use std::fs;
+    
+    // Find all HTML files recursively
+    fn process_directory(dir: &Path, livereload_host: &str) -> Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_dir() {
+                process_directory(&path, livereload_host)?;
+            } else if path.extension().and_then(|s| s.to_str()) == Some("html") {
+                // Read the HTML file
+                let content = fs::read_to_string(&path)?;
+                
+                // Inject livereload script
+                let updated_content = inject_livereload_script(&content, livereload_host);
+                
+                // Write back if changed
+                if content != updated_content {
+                    fs::write(&path, updated_content)?;
+                }
+            }
+        }
+        Ok(())
+    }
+    
+    process_directory(output_dir, livereload_host)
+}
+
+/// Inject livereload script into HTML content
+fn inject_livereload_script(html: &str, livereload_host: &str) -> String {
+    let script = format!(
+        r#"
+   <script>
+   (function() {{
+       console.log('Initializing live reload...');
+       const socket = new WebSocket('ws://{}/__livereload');
+       
+       socket.onopen = function() {{
+           console.log('Live reload connected');
+       }};
+       
+       socket.onmessage = function(event) {{
+           console.log('Live reload message:', event.data);
+           if (event.data === 'reload') {{
+               console.log('Reloading page...');
+               location.reload();
+           }}
+       }};
+       
+       socket.onclose = function() {{
+           console.log('Live reload disconnected');
+       }};
+       
+       socket.onerror = function(error) {{
+           console.error('Live reload error:', error);
+       }};
+       
+       window.addEventListener('beforeunload', function() {{
+           socket.close();
+       }});
+   }})();
+   </script>
+"#,
+        livereload_host
+    );
+
+    // Try to inject before closing head tag, or before body if not found
+    if let Some(pos) = html.rfind("</head>") {
+        let mut result = String::with_capacity(html.len() + script.len());
+        result.push_str(&html[..pos]);
+        result.push_str(&script);
+        result.push_str(&html[pos..]);
+        result
+    } else if let Some(pos) = html.rfind("</body>") {
+        let mut result = String::with_capacity(html.len() + script.len());
+        result.push_str(&html[..pos]);
+        result.push_str(&script);
+        result.push_str(&html[pos..]);
+        result
+    } else {
+        format!("{}{}", html, script)
+    }
+}
+
 
 
