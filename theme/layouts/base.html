@@ -15,15 +15,29 @@
    {% if livereload %}
    <script>
    (function() {
-       const socket = new WebSocket('ws://{{ livereload }}//__livereload');
+       console.log('Initializing live reload...');
+       const socket = new WebSocket('ws://{{ livereload }}/__livereload');
+       
+       socket.onopen = function() {
+           console.log('Live reload connected');
+       };
+       
        socket.onmessage = function(event) {
+           console.log('Live reload message:', event.data);
            if (event.data === 'reload') {
+               console.log('Reloading page...');
                location.reload();
            }
        };
+       
        socket.onclose = function() {
            console.log('Live reload disconnected');
        };
+       
+       socket.onerror = function(error) {
+           console.error('Live reload error:', error);
+       };
+       
        window.addEventListener('beforeunload', function() {
            socket.close();
        });

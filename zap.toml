@@ -30,7 +30,7 @@ open = false
 # title = "My Awesome Site"
 # tagline = "Built with Zap"
 # secondary_tagline = "Fast, simple, powerful"
-small_tag = "v1.0"
+# small_tag = "v1.0"
 
 [home]
 # Homepage configuration

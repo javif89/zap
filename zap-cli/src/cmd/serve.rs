@@ -144,12 +144,14 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
     debouncer
         .watcher()
         .watch(&source_dir, notify::RecursiveMode::Recursive)?;
+    println!("Watching source directory: {}", source_dir.display());
 
     // Watch theme directory if it exists
     if theme_dir.exists() {
         debouncer
             .watcher()
             .watch(&theme_dir, notify::RecursiveMode::Recursive)?;
+        println!("Watching theme directory: {}", theme_dir.display());
     }
 
     // Watch config file if it exists
@@ -157,12 +159,28 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
         debouncer
             .watcher()
             .watch(&config_file, notify::RecursiveMode::NonRecursive)?;
+        println!("Watching config file: {}", config_file.display());
     }
 
     println!("Watching source files for changes...");
 
     while let Some(path) = rx.recv().await {
-        println!("Source file changed: {}", path.display());
+        println!("Source file changed: {} (absolute: {})", path.display(), path.canonicalize().unwrap_or(path.clone()).display());
+        
+        // Check if this is actually a source file change
+        let abs_path = path.canonicalize().unwrap_or(path.clone());
+        let abs_source_dir = source_dir.canonicalize().unwrap_or(source_dir.clone());
+        let abs_theme_dir = theme_dir.canonicalize().unwrap_or(theme_dir.clone());
+        let abs_config_file = config_file.canonicalize().unwrap_or(config_file.clone());
+        
+        let is_source_change = abs_path.starts_with(&abs_source_dir) 
+            || abs_path.starts_with(&abs_theme_dir) 
+            || abs_path == abs_config_file;
+            
+        if !is_source_change {
+            println!("  Skipping non-source file change");
+            continue;
+        }
 
         // Rebuild site - the dev server will detect output changes and reload
         match build_site_with_livereload(

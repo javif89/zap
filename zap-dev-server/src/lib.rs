@@ -163,7 +163,7 @@ async fn start_file_watcher(
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
     let mut debouncer = new_debouncer(
-        Duration::from_millis(250),
+        Duration::from_millis(500), // Increase debounce time
         move |res: DebounceEventResult| {
             if let Ok(events) = res {
                 for event in events {
@@ -188,12 +188,21 @@ async fn start_file_watcher(
 
     println!("File watcher started for: {}", watch_path.display());
 
-    // Process file change events
+    // Process file change events with simple deduplication
+    let mut last_reload = std::time::Instant::now();
     while let Some(path) = rx.recv().await {
         println!("File changed: {}", path.display());
         
-        // Send reload message to all connected clients
-        let _ = reload_tx.send("reload".to_string());
+        // Only send reload if enough time has passed since last reload
+        let now = std::time::Instant::now();
+        if now.duration_since(last_reload) > Duration::from_millis(1000) {
+            // Send reload message to all connected clients
+            let _ = reload_tx.send("reload".to_string());
+            last_reload = now;
+            println!("Sent reload signal");
+        } else {
+            println!("Skipping reload (too soon)");
+        }
     }
 
     Ok(())
