@@ -12,11 +12,11 @@
    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/all.min.js" defer></script>
    <link rel="stylesheet" href="/style.css">
    <title>{{ site.title | default(value="Zap") }}</title>
-   {% if livereload %}
+   {% if dev_mode %}
    <script>
    (function() {
        console.log('Initializing live reload...');
-       const socket = new WebSocket('ws://{{ livereload }}/__livereload');
+       const socket = new WebSocket('ws://{{ dev_server.host }}:{{ dev_server.port }}/__livereload');
        
        socket.onopen = function() {
            console.log('Live reload connected');

@@ -54,7 +54,7 @@ pub fn execute(args: &ArgMatches) -> Result<()> {
     let output_dir = Path::new(&build_config.output);
     let theme_dir = Path::new(&build_config.theme);
 
-    // Build site using shared function
+    // Build site using shared function (dev_mode will be false for production)
     build_site(&zap_config.site, source_dir, output_dir, theme_dir)?;
 
     println!("Site built successfully in {}", output_dir.display());

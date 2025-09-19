@@ -78,14 +78,17 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
     let theme_dir = PathBuf::from(&build_config.theme);
     let config_file = PathBuf::from(&build_config.config);
     
-    // Initial build with livereload support
-    let livereload_host = format!("{}:{}", build_config.host, build_config.port);
-    build_site_with_livereload(
-        &zap_config,
+    // Initial build with dev mode enabled
+    let mut dev_config = zap_config.site.clone();
+    dev_config.dev_mode = true;
+    dev_config.dev_server_host = build_config.host.clone();
+    dev_config.dev_server_port = build_config.port;
+    
+    build_site(
+        &dev_config,
         &source_dir,
         &output_dir,
         &theme_dir,
-        &livereload_host,
     )?;
 
     // Start the live dev server (handles its own file watching of output dir)
@@ -124,7 +127,6 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
     let output_dir = PathBuf::from(&build_config.output);
     let theme_dir = PathBuf::from(&build_config.theme);
     let config_file = PathBuf::from(&build_config.config);
-    let livereload_host = format!("{}:{}", build_config.host, build_config.port);
     
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
@@ -181,13 +183,18 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
             continue;
         }
 
-        // Rebuild site - the dev server will detect output changes and reload
-        match build_site_with_livereload(
-            &config,
+        // Rebuild site - the dev server will detect output changes and reload  
+        let build_config = config.build_config();
+        let mut dev_config = config.site.clone();
+        dev_config.dev_mode = true;
+        dev_config.dev_server_host = build_config.host.clone();
+        dev_config.dev_server_port = build_config.port;
+        
+        match build_site(
+            &dev_config,
             &source_dir,
             &output_dir,
             &theme_dir,
-            &livereload_host,
         ) {
             Ok(_) => {
                 println!("Site rebuilt successfully");
@@ -201,109 +208,6 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
     Ok(())
 }
 
-/// Build site with livereload support - CLI-specific function
-fn build_site_with_livereload(
-    config: &crate::config::ZapConfig,
-    source_dir: &Path,
-    output_dir: &Path,
-    theme_dir: &Path,
-    livereload_host: &str,
-) -> Result<()> {
-    // First do the standard build
-    build_site(&config.site, source_dir, output_dir, theme_dir)?;
-    
-    // Then add livereload script to all HTML files
-    inject_livereload_into_html_files(output_dir, livereload_host)?;
-    
-    Ok(())
-}
-
-/// Inject livereload script into all HTML files in the output directory
-fn inject_livereload_into_html_files(output_dir: &Path, livereload_host: &str) -> Result<()> {
-    use std::fs;
-    
-    // Find all HTML files recursively
-    fn process_directory(dir: &Path, livereload_host: &str) -> Result<()> {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            
-            if path.is_dir() {
-                process_directory(&path, livereload_host)?;
-            } else if path.extension().and_then(|s| s.to_str()) == Some("html") {
-                // Read the HTML file
-                let content = fs::read_to_string(&path)?;
-                
-                // Inject livereload script
-                let updated_content = inject_livereload_script(&content, livereload_host);
-                
-                // Write back if changed
-                if content != updated_content {
-                    fs::write(&path, updated_content)?;
-                }
-            }
-        }
-        Ok(())
-    }
-    
-    process_directory(output_dir, livereload_host)
-}
-
-/// Inject livereload script into HTML content
-fn inject_livereload_script(html: &str, livereload_host: &str) -> String {
-    let script = format!(
-        r#"
-   <script>
-   (function() {{
-       console.log('Initializing live reload...');
-       const socket = new WebSocket('ws://{}/__livereload');
-       
-       socket.onopen = function() {{
-           console.log('Live reload connected');
-       }};
-       
-       socket.onmessage = function(event) {{
-           console.log('Live reload message:', event.data);
-           if (event.data === 'reload') {{
-               console.log('Reloading page...');
-               location.reload();
-           }}
-       }};
-       
-       socket.onclose = function() {{
-           console.log('Live reload disconnected');
-       }};
-       
-       socket.onerror = function(error) {{
-           console.error('Live reload error:', error);
-       }};
-       
-       window.addEventListener('beforeunload', function() {{
-           socket.close();
-       }});
-   }})();
-   </script>
-"#,
-        livereload_host
-    );
-
-    // Try to inject before closing head tag, or before body if not found
-    if let Some(pos) = html.rfind("</head>") {
-        let mut result = String::with_capacity(html.len() + script.len());
-        result.push_str(&html[..pos]);
-        result.push_str(&script);
-        result.push_str(&html[pos..]);
-        result
-    } else if let Some(pos) = html.rfind("</body>") {
-        let mut result = String::with_capacity(html.len() + script.len());
-        result.push_str(&html[..pos]);
-        result.push_str(&script);
-        result.push_str(&html[pos..]);
-        result
-    } else {
-        format!("{}{}", html, script)
-    }
-}
 
 
 

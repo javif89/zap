@@ -516,6 +516,17 @@ pub fn build_site(
         .home_config(home_config)
         .navigation(navigation);
 
+    // Add development mode context if enabled
+    if config.dev_mode {
+        builder = builder.add_custom("dev_mode", true)?;
+        
+        let dev_server = serde_json::json!({
+            "host": config.dev_server_host,
+            "port": config.dev_server_port
+        });
+        builder = builder.add_custom("dev_server", dev_server)?;
+    }
+
     for page in pages {
         builder = builder.add_page(page);
     }

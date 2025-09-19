@@ -35,6 +35,16 @@ impl From<toml::de::Error> for ConfigError {
 pub struct Config {
     pub site: Option<SiteConfig>,
     pub home: Option<HomeConfig>,
+    #[serde(default)]
+    pub dev_mode: bool,
+    #[serde(default)]
+    pub dev_server_host: String,
+    #[serde(default = "default_dev_port")]
+    pub dev_server_port: u16,
+}
+
+fn default_dev_port() -> u16 {
+    3000
 }
 
 impl Config {
