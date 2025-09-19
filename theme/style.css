@@ -1,7 +1,7 @@
 @import "tailwindcss" source(".");
 @custom-variant dark (&:where(.dark, .dark *));
 @plugin "@tailwindcss/typography";
-@import "./themes/catpuccin.css";
+@import "./themes/doom.css";
 
 /* Configure BasecoatUI colors for Tailwind v4 */
 @theme {
