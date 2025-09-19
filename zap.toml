@@ -27,9 +27,9 @@ open = false
 
 [site]
 # Site metadata configuration
-title = "My Awesome Site"
-tagline = "Built with Zap"
-secondary_tagline = "Fast, simple, powerful"
+# title = "My Awesome Site"
+# tagline = "Built with Zap"
+# secondary_tagline = "Fast, simple, powerful"
 small_tag = "v1.0"
 
 [home]

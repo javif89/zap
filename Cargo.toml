@@ -1,5 +1,5 @@
 [workspace]
-members = ["zap-cli", "zap-core"]
+members = ["zap-cli", "zap-core", "zap-dev-server"]
 
 resolver = "2"
 

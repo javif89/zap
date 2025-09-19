@@ -1,21 +1,12 @@
 use anyhow::Result;
-use axum::{
-    Router,
-    extract::State,
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
-    response::IntoResponse,
-    routing::get,
-};
 use clap::{Arg, ArgMatches, Command};
 use notify_debouncer_mini::{DebounceEventResult, new_debouncer};
 use std::{
-    net::SocketAddr,
     path::{Path, PathBuf},
     time::Duration,
 };
-use tokio::sync::broadcast;
-use tower_http::services::ServeDir;
 use zap_core::{NavItem, PageType, SiteBuilder, SiteScanner};
+use zap_dev_server::{LiveServer, LiveServerConfig};
 use crate::config::load_serve_config;
 
 pub fn make_subcommand() -> Command {
@@ -76,16 +67,6 @@ pub fn make_subcommand() -> Command {
         )
 }
 
-#[derive(Clone)]
-struct AppState {
-    reload_tx: broadcast::Sender<String>,
-    source_dir: PathBuf,
-    output_dir: PathBuf,
-    theme_dir: PathBuf,
-    config_file: PathBuf,
-    livereload_host: String,
-    zap_config: crate::config::ZapConfig,
-}
 
 pub async fn execute(args: &ArgMatches) -> Result<()> {
     // Load cascading configuration
@@ -96,12 +77,9 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
     let output_dir = PathBuf::from(&build_config.output);
     let theme_dir = PathBuf::from(&build_config.theme);
     let config_file = PathBuf::from(&build_config.config);
-    let port = build_config.port;
-    let host = &build_config.host;
-    let open_browser = build_config.open;
-
-    // Initial build with livereload
-    let livereload_host = format!("{}:{}", host, port);
+    
+    // Initial build with livereload support
+    let livereload_host = format!("{}:{}", build_config.host, build_config.port);
     build_site_with_livereload(
         &source_dir,
         &output_dir,
@@ -111,87 +89,48 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
         &zap_config,
     )?;
 
-    // Create broadcast channel for live reload
-    let (reload_tx, _) = broadcast::channel::<String>(100);
-
-    let state = AppState {
-        reload_tx: reload_tx.clone(),
-        source_dir: source_dir.clone(),
-        output_dir: output_dir.clone(),
-        theme_dir: theme_dir.clone(),
-        config_file: config_file.clone(),
-        livereload_host: livereload_host.clone(),
-        zap_config: zap_config.clone(),
+    // Start the live dev server (handles its own file watching of output dir)
+    let server_config = LiveServerConfig {
+        host: build_config.host.clone(),
+        port: build_config.port,
+        root: output_dir.clone(),
+        open: build_config.open,
+        ignore: vec![".git".to_string(), "*.tmp".to_string()],
     };
-
-    // Start file watcher
-    let watcher_state = state.clone();
-    tokio::spawn(async move {
-        if let Err(e) = start_file_watcher(watcher_state).await {
-            eprintln!("File watcher error: {}", e);
+    
+    let server = LiveServer::new(server_config);
+    let server_handle = tokio::spawn(async move {
+        if let Err(e) = server.run().await {
+            eprintln!("Dev server error: {}", e);
         }
     });
 
-    // Create router
-    let serve_dir = ServeDir::new(&output_dir);
-    let app = Router::new()
-        .route("/__livereload", get(websocket_handler))
-        .nest_service("/", serve_dir)
-        .with_state(state);
-
-    let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
-
-    println!("Serving site at http://{}", addr);
-    println!("Serving files from: {}", output_dir.display());
-    println!("Watching for changes in: {}", source_dir.display());
-
-    if open_browser
-        && let Err(e) = open::that(format!("http://{}", addr)) {
-            eprintln!("Failed to open browser: {}", e);
+    // Watch source files and rebuild on changes
+    let watcher_config = zap_config.clone();
+    let watcher_handle = tokio::spawn(async move {
+        if let Err(e) = watch_source_files(watcher_config).await {
+            eprintln!("Source watcher error: {}", e);
         }
+    });
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
+    // Wait for both tasks
+    let _ = tokio::try_join!(server_handle, watcher_handle)?;
 
     Ok(())
 }
 
-async fn websocket_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    ws.on_upgrade(|socket| websocket_connection(socket, state.reload_tx))
-}
-
-async fn websocket_connection(mut socket: WebSocket, reload_tx: broadcast::Sender<String>) {
-    let mut rx = reload_tx.subscribe();
-
-    loop {
-        tokio::select! {
-            msg = rx.recv() => {
-                match msg {
-                    Ok(reload_msg) => {
-                        if socket.send(Message::Text(reload_msg)).await.is_err() {
-                            break;
-                        }
-                    }
-                    Err(_) => break,
-                }
-            }
-            msg = socket.recv() => {
-                if msg.is_none() {
-                    break;
-                }
-            }
-        }
-    }
-}
-
-async fn start_file_watcher(state: AppState) -> Result<()> {
+async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
+    let build_config = config.build_config();
+    let source_dir = PathBuf::from(&build_config.source);
+    let output_dir = PathBuf::from(&build_config.output);
+    let theme_dir = PathBuf::from(&build_config.theme);
+    let config_file = PathBuf::from(&build_config.config);
+    let livereload_host = format!("{}:{}", build_config.host, build_config.port);
+    
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
     let mut debouncer = new_debouncer(
-        Duration::from_millis(250),
+        Duration::from_millis(500), // Slightly longer delay for rebuilds
         move |res: DebounceEventResult| {
             if let Ok(events) = res {
                 for event in events {
@@ -204,40 +143,38 @@ async fn start_file_watcher(state: AppState) -> Result<()> {
     // Watch source directory
     debouncer
         .watcher()
-        .watch(&state.source_dir, notify::RecursiveMode::Recursive)?;
+        .watch(&source_dir, notify::RecursiveMode::Recursive)?;
 
     // Watch theme directory if it exists
-    if state.theme_dir.exists() {
+    if theme_dir.exists() {
         debouncer
             .watcher()
-            .watch(&state.theme_dir, notify::RecursiveMode::Recursive)?;
+            .watch(&theme_dir, notify::RecursiveMode::Recursive)?;
     }
 
     // Watch config file if it exists
-    if state.config_file.exists() {
+    if config_file.exists() {
         debouncer
             .watcher()
-            .watch(&state.config_file, notify::RecursiveMode::NonRecursive)?;
+            .watch(&config_file, notify::RecursiveMode::NonRecursive)?;
     }
 
-    println!("File watcher started");
+    println!("Watching source files for changes...");
 
     while let Some(path) = rx.recv().await {
-        println!("File changed: {}", path.display());
+        println!("Source file changed: {}", path.display());
 
-        // Rebuild site with livereload
+        // Rebuild site - the dev server will detect output changes and reload
         match build_site_with_livereload(
-            &state.source_dir,
-            &state.output_dir,
-            &state.theme_dir,
-            &state.config_file,
-            Some(&state.livereload_host),
-            &state.zap_config,
+            &source_dir,
+            &output_dir,
+            &theme_dir,
+            &config_file,
+            Some(&livereload_host),
+            &config,
         ) {
             Ok(_) => {
                 println!("Site rebuilt successfully");
-                // Send reload message to all connected clients
-                let _ = state.reload_tx.send("reload".to_string());
             }
             Err(e) => {
                 eprintln!("Build error: {}", e);
@@ -248,15 +185,6 @@ async fn start_file_watcher(state: AppState) -> Result<()> {
     Ok(())
 }
 
-fn build_site(
-    source_dir: &Path,
-    output_dir: &Path,
-    theme_dir: &Path,
-    config_file: &Path,
-    zap_config: &crate::config::ZapConfig,
-) -> Result<()> {
-    build_site_with_livereload(source_dir, output_dir, theme_dir, config_file, None, zap_config)
-}
 
 fn build_site_with_livereload(
     source_dir: &Path,
