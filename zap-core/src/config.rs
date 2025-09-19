@@ -54,6 +54,12 @@ impl Config {
 
         Ok(config)
     }
+
+    pub fn dev(&mut self, host: String, port: u16) {
+        self.dev_mode = true;
+        self.dev_server_host = host;
+        self.dev_server_port = port;
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]

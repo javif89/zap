@@ -70,22 +70,21 @@ pub fn make_subcommand() -> Command {
 
 pub async fn execute(args: &ArgMatches) -> Result<()> {
     // Load cascading configuration
-    let zap_config = load_serve_config(args)?;
-    let build_config = zap_config.build_config();
+    let mut config = load_serve_config(args)?;
+    let build_config = config.build_config();
 
     let source_dir = PathBuf::from(&build_config.source);
     let output_dir = PathBuf::from(&build_config.output);
     let theme_dir = PathBuf::from(&build_config.theme);
-    let config_file = PathBuf::from(&build_config.config);
+    let host = build_config.host.clone();
+    let port = build_config.port;
+    let open = build_config.open;
     
-    // Initial build with dev mode enabled
-    let mut dev_config = zap_config.site.clone();
-    dev_config.dev_mode = true;
-    dev_config.dev_server_host = build_config.host.clone();
-    dev_config.dev_server_port = build_config.port;
+    // Enable dev mode for serve command
+    config.site.dev(host.clone(), port);
     
     build_site(
-        &dev_config,
+        &config.site,
         &source_dir,
         &output_dir,
         &theme_dir,
@@ -93,10 +92,10 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
 
     // Start the live dev server (handles its own file watching of output dir)
     let server_config = LiveServerConfig {
-        host: build_config.host.clone(),
-        port: build_config.port,
+        host: host.clone(),
+        port,
         root: output_dir.clone(),
-        open: build_config.open,
+        open,
         ignore: vec![".git".to_string(), "*.tmp".to_string()],
     };
     
@@ -108,7 +107,7 @@ pub async fn execute(args: &ArgMatches) -> Result<()> {
     });
 
     // Watch source files and rebuild on changes
-    let watcher_config = zap_config.clone();
+    let watcher_config = config.clone();
     let watcher_handle = tokio::spawn(async move {
         if let Err(e) = watch_source_files(watcher_config).await {
             eprintln!("Source watcher error: {}", e);
@@ -185,13 +184,13 @@ async fn watch_source_files(config: crate::config::ZapConfig) -> Result<()> {
 
         // Rebuild site - the dev server will detect output changes and reload  
         let build_config = config.build_config();
-        let mut dev_config = config.site.clone();
-        dev_config.dev_mode = true;
-        dev_config.dev_server_host = build_config.host.clone();
-        dev_config.dev_server_port = build_config.port;
+        let host = build_config.host.clone();
+        let port = build_config.port;
+        let mut site_config = config.site.clone();
+        site_config.dev(host, port);
         
         match build_site(
-            &dev_config,
+            &site_config,
             &source_dir,
             &output_dir,
             &theme_dir,
